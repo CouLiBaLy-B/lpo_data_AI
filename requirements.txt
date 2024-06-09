@@ -10,7 +10,8 @@ seaborn==0.13.2
 SQLAlchemy==2.0.25
 statsmodels==0.14.2
 streamlit==1.33.0
-pandas
-numpy
-matplotlib
-plotly
+pandas==2.2.2
+polars==0.20.31
+numpy==1.26.4
+matplotlib==3.9.0
+plotly==5.22.0

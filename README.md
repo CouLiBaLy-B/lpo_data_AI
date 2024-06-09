@@ -12,7 +12,7 @@ pinned: false
 # SQL Query Visualizer
 
 Ce projet est une application web construite avec Python et Streamlit. Il permet aux utilisateurs de poser des questions en langage naturel sur une base de données SQLite et d'obtenir une visualisation interactive des données à l'aide de la bibliothèque Plotly.
-
+![alt text](image.png)
 ## Fonctionnalités
 
 - Poser des questions en langage naturel et obtenir des requêtes SQL générées automatiquement
