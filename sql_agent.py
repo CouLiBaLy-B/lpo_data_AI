@@ -4,7 +4,6 @@ from langchain_core.prompts import PromptTemplate
 from langchain.chains import create_sql_query_chain
 
 import streamlit as st
-
 import textwrap
 import os
 from dotenv import load_dotenv
@@ -27,45 +26,31 @@ class SQLAgent:
         self.db = SQLDatabase.from_uri("sqlite:///data/sensitive_areas.db")
 
     def question_to_sql(self, question: str) -> str:
-        prompt = f"""Vous êtes un assistant d'analyse de données spécialisé
-        dans la création de requêtes SQL à partir de questions en langage
-        naturel. Votre tâche consiste à convertir la question suivante en
-        une requête SQL valide pouvant être exécutée sur la base de
-        données 'sensitive_areas.db'.
+        prompt = f"""
+        Vous êtes un assistant d'analyse de données spécialisé dans la
+        création de requêtes SQL à partir de questions en langage naturel.
+
+        Tâche : Convertir la question suivante en une requête SQL valide pour
+        la base de données 'sensitive_areas.db'.
 
         Contexte de la base de données :
-        La base de données 'sensitive_areas.db' contient des informations sur
-        les zones sensibles, y compris leur emplacement, les espèces associées,
-        les activités sportives concernées, et les organisations qui ont fourni
-        les données. Voici un aperçu des colonnes de la table principale :
+        'sensitive_areas.db' contient des informations sur les zones sensibles,
+        incluant leur emplacement, les espèces associées, les activités
+        sportives, et les organisations fournissant les données.
 
-        1. `id` (INTEGER) : Identifiant unique de la zone sensible et de
-        l'enregistrement.
-
+        Colonnes principales :
+        1. `id` (INTEGER) : Identifiant unique de la zone sensible.
         2. `name` (TEXT) : Nom de la zone sensible.
-
         3. `description` (TEXT) : Description de la zone sensible.
-
-        4. `practices` (INTEGER) : Activités sportives liées à la
-        zone sensible.
-
-        5. `structure` (TEXT) : Nom ou acronyme de l'organisation qui a
-        fourni les données pour cette zone sensible.
-
-        6. `species_id` (INTEGER) : Identifiant de l'espèce associée à la
-        zone sensible, ou NULL s'il s'agit d'une zone réglementaire.
-
-        7. `update_datetime` (TIMESTAMP) : Date et heure de la dernière mise
-        à jour de la zone sensible.
-
-        8. `create_datetime` (TIMESTAMP) : Date et heure de enregistrement
-        de la zone sensible.
-
-        9. `region` (TEXT) : Région où se trouve la zone sensible.
-
-        10. `departement` (TEXT) : Département où se trouve la zone sensible.
-
-        11. `pays` (TEXT) : Pays où se trouve la zone sensible.
+        4. `practices` (INTEGER) : Activités sportives liées.
+        5. `structure` (TEXT) : Organisation fournissant les données.
+        6. `species_id` (INTEGER) : Identifiant de l'espèce associée.
+        7. `update_datetime` (TIMESTAMP) : Date et heure de la dernière
+        mise à jour.
+        8. `create_datetime` (TIMESTAMP) : Date et heure de création.
+        9. `region` (TEXT) : Région de la zone sensible.
+        10. `departement` (TEXT) : Département de la zone sensible.
+        11. `pays` (TEXT) : Pays de la zone sensible.
 
         Question : {question}
 
@@ -76,43 +61,26 @@ class SQLAgent:
         return response
 
     def sql_to_plotly(self, sql: str) -> str:
-        prompt = f"""Vous êtes un visualisateur scientifique de données
-        expérimenté. Votre tâche consiste à générer du code Python utilisant
-        la bibliothèque Plotly pour créer une représentation visuelle
-        pertinente et informative à partir de la requête SQL fournie.
+        prompt = f"""
+        Vous êtes un visualisateur scientifique de données expérimenté.
 
-        Vous appliquerez vos connaissances approfondies sur les principes de
-        la science des données et les techniques de visualisation pour
-        développer des graphiques et des cartes efficaces, capables
-        de communiquer clairement les tendances temporelles ou
-        géographiques présentes dans les données.
+        Tâche : Générer du code Python avec Plotly et streamlit pour
+        visualiser les données de la requête SQL fournie.
 
         Requête SQL :
         {sql}
 
-        Suit a la lettre les instructions suivantes :
+        Instructions :
+        1. Assurez-vous que le code Python généré est syntaxiquement
+        correct et respecte les bonnes pratiques.
 
-        1. Portez une attention particulière à la qualité du code, à la
-        lisibilité et à la pertinence des noms de variables. Suivez
-        rigoureusement les bonnes pratiques de programmation en Python.
+        2. Utilisez la bibliothèque sqlite3 pour interagir avec
+        'sensitive_areas.db' dans le dossier 'data'.
 
-        2. Assurez-vous que le code Python généré est syntaxiquement correct
-        et ne contient pas d'erreurs. Le graphique produit doit être
-        correctement affiché et représenter fidèlement les données de
-        la requête SQL.
+        3. Structurez votre code de manière claire sans commentaires inutiles.
+        4. Respectez le format de sortie spécifié ci-dessous.
 
-        3. Utilisez toujours la bibliothèque sqlite3 pour interagir avec
-        la base de données 'sensitive_areas.db' située dans le dossier 'data'.
-
-        4. N'incluez pas d'instructions d'installation des bibliothèques
-        requises (plotly, sqlite3, etc.).
-
-        5. Structurez votre code de manière organisée, sans commentaires.
-
-        6. Respectez strictement le format de sortie suivant avec une
-        attention particulière à ne modifié pas la requête SQL:
-
-        ```python
+        format:
         def get_data(sql_query):
             import sqlite3
             import pandas as pd
@@ -142,32 +110,21 @@ class SQLAgent:
             st.dataframe(data)
         with col2:
             st.plotly_chart(create_plot(data))
-        ```
-
-        7. Dans la fonction create_plot, générez un graphique Plotly pertinent
-        pour visualiser les données récupérées par la requête SQL.
-        Choisissez un type de graphique approprié (par exemple, histogramme,
-        diagramme circulaire, cartogramme, etc.) en fonction de la nature
-        des données.
-
-        8. Vérifiez soigneusement que votre code est correct avant de
-        le soumettre.
 
         Code Python :
         """
-        prompt_template = PromptTemplate(template=prompt,
-                                         input_variables=["sql"])
+        prompt_template = PromptTemplate(
+            template=prompt,
+            input_variables=["sql"]
+        )
         chain = prompt_template | self.llm
         result = chain.invoke({"sql": sql})
-        return result.replace(
-                            '```', ''
-                            ).replace(
-                                'python', ''
-                            ).replace(
-                                '-', ''
-                            ).replace(
-                                '"""', ""
-                            )
+        return (
+            result.replace("```", "")
+            .replace("python", "")
+            .replace("-", "")
+            .replace('"""', "")
+        )
 
     def generate(self, question: str) -> str:
         sql = self.question_to_sql(question)
