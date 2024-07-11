@@ -1,5 +1,5 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+# Ce workflow installera les dépendances Python, exécutera les tests et le lint avec une seule version de Python
+# Pour plus d'informations, consultez : https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
 name: LPO data AI
 
@@ -14,13 +14,13 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     
     env:
       USERNAME: ${{secrets.USERNAME}}
       PASSWORD: ${{secrets.PASSWORD}}
       HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
+
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.10
@@ -32,7 +32,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name:
+    - name: Use API Key in Script
       run: |
         echo "Using API key in script: $HUGGINGFACE_API_KEY"
     - name: Lint with flake8
