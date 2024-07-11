@@ -34,7 +34,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name:
       run: |
-      echo "Using API key in script: $HUGGINGFACE_API_KEY"
+        echo "Using API key in script: $HUGGINGFACE_API_KEY"
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
