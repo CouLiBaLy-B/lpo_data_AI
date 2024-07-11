@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-HUGGINGFACE_HUB_API_TOKEN = os.getenv("huggingface_api_key")
+HUGGINGFACE_HUB_API_TOKEN = os.getenv("HUGGINGFACE_API_KEY")
 
 
 class SQLAgent:
