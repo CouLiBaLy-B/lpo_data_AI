@@ -36,9 +36,10 @@ Ce projet est une application web construite avec Python et Streamlit. Il permet
 
 1. Clonez le dépôt GitHub
 2. Créez un fichier `.env` à la racine du projet et ajoutez les variables d'environnement suivantes :
-    - `USERNAME` : votre nom d'utilisateur
-    - `PASSWORD` : votre mot de passe
-    - `huggingface_api_key` : votre clé API pour HuggingFace
+    - `SECURITY_USERNAME` : votre nom d'utilisateur
+    - `SECURITY_PASSWORD` : votre mot de passe
+    - `SECURITY_SECRET_KEY` : une chaîne de caractères aléatoire et secrète
+    - `AI_HUGGINGFACE_API_KEY` : votre clé API pour HuggingFace
 3. Installez les dépendances avec `pip install -r requirements.txt`
 
 ## Utilisation

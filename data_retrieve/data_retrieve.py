@@ -28,13 +28,12 @@ class DataExtractor:
         return cleaned_text
 
     def _get_location_info(self, latitude, longitude):
-        location = self.geolocator.reverse((latitude, longitude),
-                                           exactly_one=True)
+        location = self.geolocator.reverse((latitude, longitude), exactly_one=True)
         address = location.raw["address"]
         return {
             "region": address.get("state", ""),
             "department": address.get("county", ""),
-            "country": address.get("country", "")
+            "country": address.get("country", ""),
         }
 
     def _type_conversion(self, df):
@@ -64,26 +63,24 @@ class DataExtractor:
         df = pl.DataFrame(
             [
                 {
-                    "create_datetime": self._convertir_date(
-                        item["create_datetime"]
-                        ),
+                    "create_datetime": self._convertir_date(item["create_datetime"]),
                     "id": item["id"],
-                    "description": self._remove_html_tags(
-                        item["description"]["fr"]
-                        ),
+                    "description": self._remove_html_tags(item["description"]["fr"]),
                     "name": item["name"]["fr"],
                     "structure": item["structure"],
                     "species_id": item["species_id"],
                     "practices": item["practices"],
-                    "lat": (item["geometry"]["coordinates"][0][0][0][1]
-                            if item["geometry"]["type"] == "MultiPolygon"
-                            else item["geometry"]["coordinates"][0][0][1]),
-                    "lon": (item["geometry"]["coordinates"][0][0][0][0]
-                            if item["geometry"]["type"] == "MultiPolygon"
-                            else item["geometry"]["coordinates"][0][0][0]),
-                    "update_datetime": self._convertir_date(
-                        item["update_datetime"]
-                        ),
+                    "lat": (
+                        item["geometry"]["coordinates"][0][0][0][1]
+                        if item["geometry"]["type"] == "MultiPolygon"
+                        else item["geometry"]["coordinates"][0][0][1]
+                    ),
+                    "lon": (
+                        item["geometry"]["coordinates"][0][0][0][0]
+                        if item["geometry"]["type"] == "MultiPolygon"
+                        else item["geometry"]["coordinates"][0][0][0]
+                    ),
+                    "update_datetime": self._convertir_date(item["update_datetime"]),
                 }
                 for item in res
             ]
@@ -97,9 +94,8 @@ class DataExtractor:
 
         df = df.with_columns(
             pl.col("location_info").struct.field("region").alias("region"),
-            pl.col("location_info").struct.field("department"
-                                                 ).alias("department"),
-            pl.col("location_info").struct.field("country").alias("Pays")
+            pl.col("location_info").struct.field("department").alias("department"),
+            pl.col("location_info").struct.field("country").alias("Pays"),
         )
 
         df = df.drop("location_info")
@@ -107,7 +103,7 @@ class DataExtractor:
             pl.col("create_datetime").str.strptime(pl.Date, "%Y-%m-%d"),
             pl.col("update_datetime").str.strptime(pl.Date, "%Y-%m-%d"),
             pl.col("id").cast(pl.Int64),
-            pl.col("species_id").cast(pl.Int64)
+            pl.col("species_id").cast(pl.Int64),
         )
 
         df = df.explode("practices")
@@ -152,11 +148,7 @@ class DatabaseManager:
 
     def save_dataframe(self, df, table_name):
         df_pd = df.to_pandas()
-        df_pd.to_sql(name=table_name,
-                     con=self.conn,
-                     if_exists="replace",
-                     index=False
-                     )
+        df_pd.to_sql(name=table_name, con=self.conn, if_exists="replace", index=False)
 
     def load_dataframe(self, table_name):
         return pd.read_sql_query(f"SELECT * FROM {table_name}", self.conn)
@@ -203,13 +195,17 @@ class DataProcessor:
         # Transférez les données en toute sécurité
         self.database_manager.save_dataframe(data, "sensitive_areas")
         # Après avoir connecté la base de données
-        self.database_manager.execute_script("""ALTER TABLE sensitive_areas
-                                             ADD COLUMN category TEXT;""")
-        self.database_manager.execute_script("""UPDATE sensitive_areas
+        self.database_manager.execute_script(
+            """ALTER TABLE sensitive_areas
+                                             ADD COLUMN category TEXT;"""
+        )
+        self.database_manager.execute_script(
+            """UPDATE sensitive_areas
                                              SET category = CASE
                                              WHEN species_id IS NULL THEN
                                              'zone reglementaire'
-                                             ELSE 'Espece' END;""")
+                                             ELSE 'Espece' END;"""
+        )
 
 
 if __name__ == "__main__":

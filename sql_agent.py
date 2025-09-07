@@ -5,25 +5,20 @@ from langchain.chains import create_sql_query_chain
 
 import streamlit as st
 import textwrap
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
-
-HUGGINGFACE_HUB_API_TOKEN = os.getenv("HUGGINGFACE_API_KEY")
+from src.config.settings import settings
 
 
 class SQLAgent:
     def __init__(self):
         self.llm = HuggingFaceEndpoint(
-            repo_id="mistralai/MixTraL-8x7B-Instruct-v0.1",
-            temperature=0.001,
+            repo_id=settings.ai.sql_model,
+            temperature=settings.ai.temperature,
             repetition_penalty=1.2,
-            max_length=500,
-            max_new_tokens=1024,
-            huggingfacehub_api_token=HUGGINGFACE_HUB_API_TOKEN,
+            max_new_tokens=settings.ai.max_tokens,
+            huggingfacehub_api_token=settings.ai.huggingface_api_key,
         )
-        self.db = SQLDatabase.from_uri("sqlite:///data/sensitive_areas.db")
+        self.db = SQLDatabase.from_uri(f"sqlite:///{settings.database.db_path}")
 
     def question_to_sql(self, question: str) -> str:
         prompt = f"""
@@ -113,10 +108,7 @@ class SQLAgent:
 
         Code Python :
         """
-        prompt_template = PromptTemplate(
-            template=prompt,
-            input_variables=["sql"]
-        )
+        prompt_template = PromptTemplate(template=prompt, input_variables=["sql"])
         chain = prompt_template | self.llm
         result = chain.invoke({"sql": sql})
         return (

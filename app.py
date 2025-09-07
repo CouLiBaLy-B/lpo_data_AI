@@ -55,8 +55,7 @@ def home():
 if __name__ == "__main__":
     st.set_page_config(page_title="LPO App", page_icon=":bird:", layout="wide")
 
-    st.markdown("<h2>Welcome to SQL Query Visualizer </h2>",
-                unsafe_allow_html=True)
+    st.markdown("<h2>Welcome to SQL Query Visualizer </h2>", unsafe_allow_html=True)
     st.sidebar.title("Navigation")
     with st.sidebar:
         st.markdown(
