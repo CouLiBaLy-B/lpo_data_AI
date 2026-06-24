@@ -2,14 +2,15 @@
 import hashlib
 import hmac
 import secrets
-import jwt  # PyJWT
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
 from functools import wraps
+from typing import Any, Dict, Optional
+
+import jwt  # PyJWT
 import streamlit as st
 
-from .exceptions import AuthenticationException
 from ..config.settings import settings
+from .exceptions import AuthenticationException
 
 
 class SecurityManager:
@@ -144,7 +145,7 @@ def check_jwt_installation():
         test_payload = {"test": "data"}
         test_secret = "test_secret"
         token = jwt.encode(test_payload, test_secret, algorithm="HS256")
-        decoded = jwt.decode(token, test_secret, algorithms=["HS256"])
+        jwt.decode(token, test_secret, algorithms=["HS256"])
         return True
     except Exception as e:
         print(f"Erreur PyJWT: {e}")

@@ -1,94 +1,91 @@
-# src/config/settings.py
-from pydantic_settings import BaseSettings
-from pydantic import Field, field_validator
-from typing import Optional
 from pathlib import Path
+
 from dotenv import load_dotenv
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 load_dotenv()
 
+# Racine du projet (pour résoudre le chemin SQLite par défaut de façon absolue)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_SQLITE = PROJECT_ROOT / "data" / "sensitive_areas.db"
+
 
 class DatabaseSettings(BaseSettings):
-    """Configuration de la base de données"""
+    """
+    Connexion base de données pilotée par DATABASE_URL.
 
-    db_path: Path = Field(default="data/sensitive_areas.db")
-    connection_pool_size: int = Field(default=5)
-    echo: bool = Field(default=False)
+    - dev  : sqlite:///data/sensitive_areas.db (défaut)
+    - prod : postgresql://user:pwd@host:5432/dbname
 
-    @field_validator("db_path")
-    @classmethod
-    def validate_db_path(cls, v):
-        if not v.parent.exists():
-            v.parent.mkdir(parents=True, exist_ok=True)
-        return v
+    L'application travaille en LECTURE SEULE : seules les requêtes SELECT
+    sont autorisées (la donnée est alimentée par un système externe).
+    """
 
-
-class AISettings(BaseSettings):
-    """Configuration IA"""
-
-    huggingface_api_key: str = Field(...)
-    model_name: str = Field(default="mistralai/Mistral-7B-v0.13")
-    sql_model: str = Field(default="mistralai/Mistral-7B-v0.13")
-    chart_model: str = Field(default="mistralai/Mistral-7B-v0.13")
-    temperature: float = Field(default=0.1, ge=0.0, le=1.0)
-    max_tokens: int = Field(default=1024, ge=1, le=4096)
-    timeout: int = Field(default=30)
+    url: str = Field(default=f"sqlite:///{_DEFAULT_SQLITE}", alias="DATABASE_URL")
+    read_only: bool = Field(default=True, alias="DB_READ_ONLY")
+    statement_timeout_ms: int = Field(default=15000, alias="DB_STATEMENT_TIMEOUT_MS")
+    max_rows: int = Field(default=5000, alias="DB_MAX_ROWS")
 
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
-        "extra": "ignore",  # Ignore les variables extra du .env
+        "extra": "ignore",
+        "populate_by_name": True,
+    }
+
+
+class AISettings(BaseSettings):
+    """
+    Configuration IA indépendante du provider.
+
+    `provider` + `model` sont combinés par le model_factory via
+    init_chat_model (ex: provider='anthropic', model='claude-haiku-4-5-...').
+    Changer de provider = changer ces deux variables, rien d'autre.
+    """
+
+    provider: str = Field(default="anthropic", alias="AI_PROVIDER")
+    model: str = Field(default="claude-haiku-4-5-20251001", alias="AI_MODEL")
+    temperature: float = Field(default=0.0, alias="AI_TEMPERATURE")
+    max_tokens: int = Field(default=2048, alias="AI_MAX_TOKENS")
+
+    # Clés par provider (seule celle du provider actif est requise)
+    anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    google_api_key: str = Field(default="", alias="GOOGLE_API_KEY")
+
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
+        "populate_by_name": True,
     }
 
 
 class SecuritySettings(BaseSettings):
-    """Configuration de sécurité"""
-
-    username: str = Field(...)
-    password: str = Field(...)
-    secret_key: str = Field(...)
+    username: str = Field(default="admin", alias="USERNAME")
+    password: str = Field(default="admin", alias="PASSWORD")
+    secret_key: str = Field(default="lpo_ai_secret_default", alias="SECRET_KEY")
     session_timeout: int = Field(default=3600)
     max_login_attempts: int = Field(default=3)
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
-
-
-class CacheSettings(BaseSettings):
-    """Configuration du cache"""
-
-    enabled: bool = Field(default=True)
-    ttl: int = Field(default=3600)
-    max_size: int = Field(default=100)
-
-    model_config = {"extra": "ignore"}
-
-
-class LoggingSettings(BaseSettings):
-    """Configuration des logs"""
-
-    level: str = Field(default="INFO")
-    format: str = Field(default="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    file_path: Optional[Path] = Field(default="logs/app.log")
-
-    model_config = {"extra": "ignore"}
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
+        "populate_by_name": True,
+    }
 
 
 class AppSettings(BaseSettings):
-    """Configuration principale de l'application"""
+    app_name: str = Field(default="LPO AI - Assistant SQL")
+    debug: bool = Field(default=False, alias="DEBUG")
 
-    app_name: str = Field(default="LPO AI - SQL Query Visualizer")
-    debug: bool = Field(default=False)
-    environment: str = Field(default="production")
-
-    # Sous-configurations
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     ai: AISettings = Field(default_factory=AISettings)
     security: SecuritySettings = Field(default_factory=SecuritySettings)
-    cache: CacheSettings = Field(default_factory=CacheSettings)
-    logging: LoggingSettings = Field(default_factory=LoggingSettings)
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
-# Instance globale
 settings = AppSettings()
