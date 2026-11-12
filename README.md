@@ -191,14 +191,21 @@ API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest            # 148 tests
+.venv/bin/python -m pytest            # 170 tests
+```
+
+Afficher le prompt système et les exemples few-shot utilisés par l'agent :
+
+```bash
+python -m orchestrator --prompt
 ```
 
 Couverture : garde-fous SQL, confidentialité (floutage), contrat des outils MCP,
 serveur MCP réel en `stdio`, client MCP de production sur transport réel,
 catalogue et gabarits A2UI, compréhension de l'intention, orchestrateur
-(create/update, dégradation, états vides), API web, et **chaîne complète**
-(HTTP → agent → sous-processus MCP → SQLite) via `tests/test_web_e2e.py`.
+(create/update, dégradation, états vides), prompt système et few-shots A2UI,
+API web, et **chaîne complète** (HTTP → agent → sous-processus MCP → SQLite) via
+`tests/test_web_e2e.py`.
 
 ## 7. Exemple bout en bout
 
@@ -224,6 +231,7 @@ régénérer).
 | `orchestrator/mcp_client.py` | Client MCP (stdio / streamable-http) |
 | `orchestrator/views.py` | Données MCP → modèle de vue (aucun calcul métier) |
 | `orchestrator/agent.py` | Boucle question → outils → surface, actions, trace |
+| `orchestrator/prompts.py` | Prompt système + 6 few-shots A2UI valides (spécification exécutable) |
 | `web/` | API FastAPI + client A2UI (`renderer.js`, `app.js`, `styles.css`) |
 | `lpo_a2ui/examples/` | Trace bout en bout + rendu DOM |
 | `docs/00-analyse-depot.md` | Rapport d'analyse (Étape 0) et questions ouvertes |

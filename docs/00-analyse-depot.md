@@ -135,7 +135,7 @@ Ce qui n'a **pas** été réutilisé, volontairement :
 | 3 | Aucun agent « question → outils → UI » | **Lot 5** : `orchestrator/` (intention, client MCP, vues, agent) |
 | 4 | Données : pas de table d'observations | Profils de schéma (`lpo_data_mcp/profiles.py`) : `observations` (démo) et `sensitive_areas` (base réelle) ; l'interface dégrade explicitement quand une capacité manque |
 | 5 | Aucune protection des espèces sensibles | `lpo_data_mcp/privacy.py` : floutage à la maille ~11 km, ou repli au département, ou exact sur autorisation explicite |
-| 6 | Aucun test | **148 tests** `pytest` (privacy, SQL, service, serveur MCP réel en stdio, client MCP de production, catalogue A2UI, intention, orchestrateur, API web, chaîne complète HTTP → MCP → SQLite) |
+| 6 | Aucun test | **170 tests** `pytest` (privacy, SQL, service, serveur MCP réel en stdio, client MCP de production, catalogue A2UI, intention, orchestrateur, prompt système et few-shots A2UI, API web, chaîne complète HTTP → MCP → SQLite) |
 | 7 | Aucune trace des appels d'outils | `TraceEntry` exposée par l'agent (`trace` dans chaque réponse HTTP) |
 | 8 | Le front Streamlit n'est pas un renderer A2UI | Nouvelle application web FastAPI + client A2UI (`web/`) ; Streamlit conservé |
 

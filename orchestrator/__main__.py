@@ -79,9 +79,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("question", nargs="*", help="question à poser (sinon REPL)")
     parser.add_argument("--json", action="store_true", help="affiche la réponse brute")
     parser.add_argument("--demo", action="store_true", help="joue le scénario de démonstration")
+    parser.add_argument(
+        "--prompt",
+        action="store_true",
+        help="affiche le prompt système et les few-shots A2UI, puis quitte",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s %(message)s")
+
+    if args.prompt:
+        from .prompts import few_shot_prompt
+
+        print(few_shot_prompt())
+        return 0
 
     try:
         if args.demo:

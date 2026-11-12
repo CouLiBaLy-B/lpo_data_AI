@@ -311,6 +311,40 @@ inventée :
 4. libellé d'espèce inconnu (l'agent propose alors les libellés réels via
    `list_species`, et le dit).
 
+### 5.3 Prompt système et few-shots A2UI
+
+`orchestrator/prompts.py` contient :
+
+- `SYSTEM_PROMPT` — les invariants de l'agent (aucun chiffre inventé, outils
+  typés, catalogue fermé cité par son identifiant, séparation structure/données,
+  actions → agent, repli texte, confidentialité) **et** la table de décision
+  « intention → type de vue → agrégation » ;
+- `FEW_SHOTS` — six exemples **complets et valides** (tendance, classement,
+  carte, comparaison à deux séries, fiche espèce, hors périmètre). Chaque
+  exemple donne la question, l'intention, les appels MCP exacts, les messages
+  A2UI et le résumé texte.
+
+Deux points de méthode :
+
+1. **Les few-shots sont produits par les gabarits de production**
+   (`lpo_a2ui.templates`), pas écrits à la main. Ils ne peuvent donc pas
+   diverger du catalogue : `tests/test_prompts.py` rejoue chaque exemple dans
+   le validateur (schéma + catalogue + séquences) et vérifie qu'aucune mesure
+   n'est en clair dans la structure.
+2. **Périmètre actuel** : le LLM ne sert aujourd'hui qu'à l'extraction
+   d'intention (`intent.py`, sortie structurée). La construction des surfaces
+   reste déterministe (`views.py` + `templates.py`), ce qui est plus sûr que de
+   laisser un modèle écrire du JSON A2UI. `prompts.py` est donc la
+   **spécification exécutable** du comportement attendu et le matériel prêt pour
+   un passage à une orchestration LLM, sans changement de catalogue ni de
+   validation.
+
+Visualiser le prompt complet (système + exemples) :
+
+```bash
+python -m orchestrator --prompt
+```
+
 ---
 
 ## 6. Sécurité et confidentialité
