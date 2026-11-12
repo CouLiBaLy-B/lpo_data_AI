@@ -195,7 +195,7 @@ API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest            # 201 tests
+.venv/bin/python -m pytest            # 263 tests
 ```
 
 Afficher le prompt système et les exemples few-shot utilisés par l'agent :
@@ -212,7 +212,8 @@ workflow actuel (Python 3.10 et affichage d'une clé API dans les journaux).
 
 Couverture : garde-fous SQL, confidentialité (floutage), contrat des outils MCP,
 serveur MCP réel en `stdio`, client MCP de production sur transport réel,
-catalogue et gabarits A2UI, compréhension de l'intention, orchestrateur
+catalogue et gabarits A2UI, compréhension de l'intention, orchestrateur,
+qualité de l'interface (contrastes AA, focus, états vides)
 (create/update, dégradation, états vides), prompt système et few-shots A2UI,
 chemin LLM de l'intention (faux modèle), liste de sensibilité configurée,
 transport MCP `streamable-http` réel, jeton d'accès de l'API, script d'index,

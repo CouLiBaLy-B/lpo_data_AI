@@ -106,9 +106,7 @@ def sensitive_species_sql_clause(column: str) -> str | None:
         return None
     raw = ", ".join(_sql_literal(label) for label in labels)
     lowered = ", ".join(_sql_literal(label.lower()) for label in labels)
-    return (
-        f"(LOWER(TRIM({column})) IN ({lowered}) OR TRIM({column}) IN ({raw}))"
-    )
+    return f"(LOWER(TRIM({column})) IN ({lowered}) OR TRIM({column}) IN ({raw}))"
 
 
 def allow_exact_coordinates() -> bool:

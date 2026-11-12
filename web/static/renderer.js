@@ -435,7 +435,22 @@ export class A2uiRenderer {
         const figure = document.createElement("div");
         figure.className = "map-host";
         node.append(figure);
-        const badge = document.createElement("div");
+        const meta = document.createElement("div");
+        meta.className = "map-meta";
+        const legend = document.createElement("span");
+        legend.className = "chart-legend";
+        for (const [className, label] of [
+          ["map-point", "observations"],
+          ["map-point is-sensitive", "espèce sensible"],
+        ]) {
+          const item = document.createElement("span");
+          item.className = "chart-legend-item";
+          const dot = document.createElement("span");
+          dot.className = `chart-legend-dot ${className}`;
+          item.append(dot, document.createTextNode(label));
+          legend.append(item);
+        }
+        const badge = document.createElement("span");
         badge.className = `privacy-badge is-${privacy}`;
         badge.textContent =
           privacy === "exact"
@@ -443,7 +458,8 @@ export class A2uiRenderer {
             : privacy === "blurred"
               ? "Localisation : maille agrégée (espèces sensibles)"
               : "Localisation : échelle départementale";
-        node.append(badge);
+        meta.append(legend, badge);
+        node.append(meta);
         this.loadGeo().then((geo) => {
           figure.replaceChildren(drawMap(points, { geo, height: Number(component.height) || 460 }));
         });
@@ -598,7 +614,8 @@ function niceNumber(value) {
   if (value <= 0) return 1;
   const exponent = Math.floor(Math.log10(value));
   const fraction = value / 10 ** exponent;
-  const nice = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
+  const nice =
+    fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 2.5 ? 2.5 : fraction <= 5 ? 5 : 10;
   return nice * 10 ** exponent;
 }
 
@@ -614,7 +631,7 @@ function formatValue(value, decimals = 0) {
 /** Courbes multi-séries, axes et légende, en SVG pur. */
 function drawLineChart(series, { height = 320, xLabel = "", yLabel = "" } = {}) {
   const width = 720;
-  const margin = { top: 18, right: 18, bottom: 46, left: 56 };
+  const margin = { top: 16, right: 20, bottom: 50, left: 64 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
@@ -641,11 +658,17 @@ function drawLineChart(series, { height = 320, xLabel = "", yLabel = "" } = {}) 
     "aria-label": `Graphique linéaire : ${series.map((s) => s.label).join(", ")}`,
   });
 
-  const x = (label) => margin.left + (plotWidth * (xIndex.get(label) ?? 0)) / Math.max(1, labels.length - 1 || 1);
+  // Les extrémités de la série sont écartées des axes : un point posé sur
+  // l'ordonnée se lit comme une valeur nulle ou une erreur de tracé.
+  const pad = 10;
+  const x = (label) =>
+    margin.left +
+    pad +
+    ((plotWidth - 2 * pad) * (xIndex.get(label) ?? 0)) / Math.max(1, labels.length - 1 || 1);
   const y = (value) => margin.top + plotHeight - (plotHeight * Number(value || 0)) / yMax;
 
-  // Grille + graduations Y
-  for (let value = 0; value <= yMax + 0.001; value += step) {
+  // Grille + graduations Y (le zéro est porté par un axe, pas par une grille)
+  for (let value = step; value <= yMax + 0.001; value += step) {
     svg.append(
       svgEl("line", {
         x1: margin.left,
@@ -664,6 +687,23 @@ function drawLineChart(series, { height = 320, xLabel = "", yLabel = "" } = {}) 
     tick.textContent = formatValue(value);
     svg.append(tick);
   }
+  svg.append(
+    svgEl("line", {
+      x1: margin.left,
+      x2: margin.left + plotWidth,
+      y1: y(0),
+      y2: y(0),
+      class: "axis-line",
+    }),
+  );
+  const zero = svgEl("text", {
+    x: margin.left - 8,
+    y: y(0) + 4,
+    class: "axis-label",
+    "text-anchor": "end",
+  });
+  zero.textContent = "0";
+  svg.append(zero);
 
   // Graduations X (max ~10 libellés)
   const stride = Math.max(1, Math.ceil(labels.length / 10));
@@ -671,7 +711,7 @@ function drawLineChart(series, { height = 320, xLabel = "", yLabel = "" } = {}) 
     if (index % stride !== 0) return;
     const tick = svgEl("text", {
       x: x(label),
-      y: margin.top + plotHeight + 20,
+      y: margin.top + plotHeight + 18,
       class: "axis-label",
       "text-anchor": "middle",
     });
@@ -679,8 +719,12 @@ function drawLineChart(series, { height = 320, xLabel = "", yLabel = "" } = {}) 
     svg.append(tick);
   });
 
-  // Séries
-  const palette = ["#1f4e79", "#2e7d32", "#b26a00", "#7b1fa2", "#00695c", "#c62828"];
+  // Séries — une teinte par série, distinguées aussi par le trait (pas de
+  // damier de couleurs : au-delà de trois séries, la comparaison se fait à la
+  // lecture des libellés, pas de la palette).
+  const palette = ["#1b5e3f", "#a8641a", "#40606d", "#6c4f78"];
+  const legend = document.createElement("div");
+  legend.className = "chart-legend";
   series.forEach((one, index) => {
     const color = one.color || palette[index % palette.length];
     const points = (one.points || []).filter((point) => xIndex.has(String(point.x)));
@@ -688,29 +732,45 @@ function drawLineChart(series, { height = 320, xLabel = "", yLabel = "" } = {}) 
     const path = points
       .map((point, i) => `${i === 0 ? "M" : "L"}${x(String(point.x))},${y(point.y)}`)
       .join(" ");
-    svg.append(svgEl("path", { d: path, fill: "none", stroke: color, "stroke-width": 2.5, "stroke-linejoin": "round" }));
+    svg.append(
+      svgEl("path", {
+        d: path,
+        fill: "none",
+        stroke: color,
+        "stroke-width": 2,
+        "stroke-linejoin": "round",
+        "stroke-linecap": "round",
+      }),
+    );
     points.forEach((point) => {
-      const circle = svgEl("circle", { cx: x(String(point.x)), cy: y(point.y), r: 3.2, fill: color });
+      const circle = svgEl("circle", {
+        cx: x(String(point.x)),
+        cy: y(point.y),
+        r: 2.8,
+        fill: color,
+        stroke: "#ffffff",
+        "stroke-width": 1,
+      });
       const title = svgEl("title");
       title.textContent = `${one.label} · ${point.x} : ${formatValue(point.y)}`;
       circle.append(title);
       svg.append(circle);
     });
-    if (series.length > 1) {
-      const legendY = margin.top + 6 + index * 18;
-      svg.append(svgEl("rect", { x: width - margin.right - 150, y: legendY - 9, width: 10, height: 10, fill: color, rx: 2 }));
-      const text = svgEl("text", { x: width - margin.right - 134, y: legendY, class: "legend-label" });
-      text.textContent = one.label;
-      svg.append(text);
-    }
+    const item = document.createElement("span");
+    item.className = "chart-legend-item";
+    const swatch = document.createElement("span");
+    swatch.className = "chart-legend-swatch";
+    swatch.style.background = color;
+    item.append(swatch, document.createTextNode(String(one.label ?? "")));
+    legend.append(item);
   });
 
   if (yLabel) {
     const label = svgEl("text", {
-      x: 14,
+      x: 16,
       y: margin.top + plotHeight / 2,
       class: "axis-title",
-      transform: `rotate(-90 14 ${margin.top + plotHeight / 2})`,
+      transform: `rotate(-90 16 ${margin.top + plotHeight / 2})`,
       "text-anchor": "middle",
     });
     label.textContent = yLabel;
@@ -719,14 +779,18 @@ function drawLineChart(series, { height = 320, xLabel = "", yLabel = "" } = {}) 
   if (xLabel) {
     const label = svgEl("text", {
       x: margin.left + plotWidth / 2,
-      y: height - 8,
+      y: height - 10,
       class: "axis-title",
       "text-anchor": "middle",
     });
     label.textContent = xLabel;
     svg.append(label);
   }
-  return svg;
+  const body = document.createElement("div");
+  body.className = "chart-body";
+  body.append(svg);
+  if (series.length > 1 && legend.childElementCount) body.append(legend);
+  return body;
 }
 
 /** Barres horizontales (libellés longs d'espèces lisibles sans rotation). */
@@ -816,7 +880,7 @@ function drawMap(points, { geo = null, height = 460 } = {}) {
   const maxValue = Math.max(1, ...points.map((point) => Number(point.value) || 0));
   for (const point of points) {
     const [x, y] = project(Number(point.lon), Number(point.lat));
-    const radius = 3 + (12 * Math.sqrt((Number(point.value) || 0) / maxValue));
+    const radius = 3 + (10 * Math.sqrt((Number(point.value) || 0) / maxValue));
     const circle = svgEl("circle", {
       cx: x,
       cy: y,
@@ -842,7 +906,9 @@ function drawTable(columns, rows, maxRows) {
   for (const column of columns) {
     const th = document.createElement("th");
     th.textContent = column.label || column.key;
-    if (column.align) th.style.textAlign = column.align;
+    th.scope = "col";
+    if (column.align === "right") th.classList.add("is-num");
+    if (column.align === "center") th.classList.add("is-center");
     headRow.append(th);
   }
   thead.append(headRow);
@@ -854,7 +920,8 @@ function drawTable(columns, rows, maxRows) {
     for (const column of columns) {
       const td = document.createElement("td");
       td.textContent = formatCell(row[column.key], column.format);
-      if (column.align) td.style.textAlign = column.align;
+      if (column.align === "right") td.classList.add("is-num");
+      if (column.align === "center") td.classList.add("is-center");
       tr.append(td);
     }
     tbody.append(tr);

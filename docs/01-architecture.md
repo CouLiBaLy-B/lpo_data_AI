@@ -107,7 +107,40 @@ validateur.
   `createElementNS`. Il n'évalue aucun code, n'accepte ni HTML, ni CSS, ni JS
   fournis par l'agent.
 
-### 2.4 Format d'inférence et validation : JSON canonique + validation systématique
+### 2.4 Interface web : sobriété contrainte par des tests
+
+L'interface (`web/static/index.html`, `styles.css`, `app.js`) est un outil
+d'analyse, pas une vitrine : elle doit rendre les chiffres vérifiables et rester
+lisible sur un écran de terrain.
+
+- **Un seul accent** (vert profond `#1b5e3f`) et des états sémantiques (ambre,
+  rouge) réservés aux alertes. Pas de dégradé, pas d'ombre portée : les
+  séparations sont des filets d'un pixel.
+- **Échelle typographique fixe** (11 / 12 / 12,5 / 13,5 / 14 / 24 px) et pile
+  système — aucune police distante n'est chargée, donc aucun FOUT ni dépendance
+  réseau supplémentaire.
+- **États explicites** : chargement (barre fine + `aria-busy`), erreur (encart
+  `role="alert"` avec la raison, sans chiffre), vide (message du composant
+  `Notice` ou `#placeholder`), mode texte seul (repli sans renderer).
+- **Accessibilité** : lien d'évitement, `role="log"` + `aria-live` sur la
+  conversation, libellé de champ réel, `:focus-visible` à 2 px jamais supprimé,
+  contrastes AA vérifiés, animations conditionnées à `prefers-reduced-motion`.
+- **Traçabilité visible** : chaque tour expose un `<details>` listant les appels
+  MCP (outil, arguments, durée, statut) afin qu'un chiffre affiché puisse être
+  reconduit à l'appel qui l'a produit.
+
+Ces propriétés sont mesurables, donc testées : `tests/test_frontend_quality.py`
+vérifie les ratios de contraste des jetons réellement employés (texte ≥ 4,5:1,
+bordures de contrôles ≥ 3:1), l'absence de dégradés, d'ombres, d'emoji
+d'identité, de capitales espacées et de polices fantômes, la présence du focus
+visible et de `prefers-reduced-motion`, la cohérence des identifiants lus par
+`app.js`, et le fait que chaque composant du catalogue possède un style.
+
+Le rendu reste vérifié sans navigateur : `lpo_a2ui/examples/render_snapshot.mjs`
+rejoue les messages A2UI sur le renderer de production dans jsdom et échoue si
+un composant n'est pas rendu.
+
+### 2.5 Format d'inférence et validation : JSON canonique + validation systématique
 
 Le pipeline décrit par [a2ui.org/concepts/overview](https://a2ui.org/concepts/overview/)
 est : `catalog.json` → « skill » A2UI pour le modèle → appels d'outils → le

@@ -29,14 +29,21 @@ const geo = JSON.parse(fs.readFileSync(path.join(STATIC, "geo/departements.geojs
 const dom = new JSDOM(
   `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Exemple A2UI — rendu</title>
    <style>${styles}
-   .snapshot{max-width:1100px;margin:2rem auto;padding:0 1rem;font-family:system-ui,sans-serif;color:#111827}
-   .snapshot section{margin-bottom:3rem}
-   .snapshot h2{font-size:1.05rem;margin-bottom:.25rem}
-   .snapshot .q{color:#4b5563;font-style:italic;margin-top:0}
-   .snapshot .frame{border:1px solid #e5e7eb;border-radius:12px;padding:1rem;background:#fff}
+   /* Habillage de la page d'exemple : mêmes jetons que l'application, pour que
+      l'instantané montre le rendu réel et non une maquette à part. */
+   body{background:var(--paper);color:var(--ink);font-family:var(--font-ui);margin:0}
+   .snapshot{max-width:1100px;margin:0 auto;padding:var(--space-8) var(--space-4) var(--space-10)}
+   .snapshot > h1{font-size:20px;font-weight:650;letter-spacing:-.01em}
+   .snapshot > .meta{max-width:78ch;margin-top:var(--space-2);color:var(--ink-3);font-size:12.5px}
+   .snapshot section{margin-top:var(--space-8);padding-top:var(--space-4);border-top:1px solid var(--line)}
+   .snapshot h2{font-size:13px;font-weight:600;font-family:var(--font-mono);letter-spacing:0}
+   .snapshot .q{color:var(--ink-2);margin:var(--space-1) 0 var(--space-3);font-size:13.5px}
+   .snapshot .frame{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:var(--space-4)}
+   .snapshot .frame > .a2ui-surface-host{display:block}
    .snapshot .live{display:none}
-   .snapshot .meta{font-size:.8rem;color:#6b7280}
-   .snapshot .fallback{white-space:pre-wrap;background:#f9fafb;border-radius:8px;padding:.75rem;font-size:.85rem}
+   .snapshot .meta{font-size:12px;color:var(--ink-3)}
+   .snapshot .fallback{margin-top:var(--space-3);white-space:pre-wrap;border-left:2px solid var(--line-strong);
+     padding:var(--space-2) var(--space-3);color:var(--ink-2);font-size:12.5px;line-height:1.55}
    </style></head><body><div class="snapshot">
    <h1>Exemple bout en bout — surfaces rendues</h1>
    <p class="meta">Messages produits par l'agent, rendus par <code>web/static/renderer.js</code>

@@ -10,27 +10,52 @@
 import { A2uiRenderer } from "/static/renderer.js";
 
 const chatLog = document.getElementById("chat-log");
+const chatCount = document.getElementById("chat-count");
+const chatEmpty = document.getElementById("chat-empty");
 const surfaceHost = document.getElementById("surface-host");
 const surfaceMeta = document.getElementById("surface-meta");
+const panel = document.getElementById("reponse");
+const progress = document.getElementById("progress");
 const form = document.getElementById("composer");
 const input = document.getElementById("question");
 const sendButton = document.getElementById("send");
 const textOnlyButton = document.getElementById("text-only");
 const protocolBadge = document.getElementById("protocol-badge");
 const demoBadge = document.getElementById("demo-badge");
+const tokenBadge = document.getElementById("token-badge");
 
 // Une conversation = une surface : on repart d'une conversation neuve à chaque
 // chargement de page, sinon l'agent mettrait à jour des surfaces que ce renderer
 // ne possède pas (le protocole impose un surfaceId unique par renderer).
 let conversationId = null;
-let catalogInfo = null;
 let textOnly = false;
 let busy = false;
+let turns = 0;
+
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 const renderer = new A2uiRenderer({
   container: surfaceHost,
   onAction: handleAction,
 });
+
+// ── Jeton d'accès optionnel ────────────────────────────────────────────────
+// Fourni une fois par l'URL (`?token=…`), puis retiré de la barre d'adresse pour
+// ne pas rester dans l'historique ni dans les journaux du proxy.
+
+const accessToken = (() => {
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get("token");
+  if (token) {
+    url.searchParams.delete("token");
+    window.history.replaceState(null, "", url.toString());
+  }
+  return token || "";
+})();
+
+function authHeaders(extra = {}) {
+  return accessToken ? { ...extra, Authorization: `Bearer ${accessToken}` } : extra;
+}
 
 // ── Utilitaires DOM ────────────────────────────────────────────────────────
 
@@ -41,15 +66,55 @@ function el(tag, className, text) {
   return node;
 }
 
+function scrollToEnd(node) {
+  const top = node.scrollHeight;
+  // Les moteurs de test (jsdom) n'implémentent pas `scrollTo` : le repli
+  // silencieux évite qu'une absence d'animation casse la conversation.
+  if (typeof node.scrollTo === "function") {
+    node.scrollTo({ top, behavior: reduceMotion.matches ? "auto" : "smooth" });
+  } else {
+    node.scrollTop = top;
+  }
+}
+
+function revealPanel() {
+  if (typeof panel.scrollIntoView !== "function") return;
+  panel.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "nearest" });
+}
+
+function setBusy(state) {
+  busy = state;
+  sendButton.disabled = state;
+  panel.setAttribute("aria-busy", String(state));
+  progress.hidden = !state;
+  progress.dataset.active = String(state);
+  sendButton.textContent = state ? "Envoi…" : "Envoyer";
+}
+
+function updateCount() {
+  chatCount.textContent = turns === 0 ? "0 tour" : `${turns} tour${turns > 1 ? "s" : ""}`;
+}
+
 function addMessage(role, text) {
+  if (chatEmpty && chatEmpty.isConnected) chatEmpty.remove();
   const wrapper = el("article", `bubble is-${role}`);
-  const meta = el("div", "bubble-role", role === "user" ? "Vous" : "Agent LPO");
+  const meta = el("p", "bubble-role", role === "user" ? "Vous" : "Agent LPO");
   const body = el("div", "bubble-text");
   body.textContent = text;
   wrapper.append(meta, body);
   chatLog.append(wrapper);
-  chatLog.scrollTop = chatLog.scrollHeight;
+  scrollToEnd(chatLog);
+  if (role === "assistant") {
+    turns += 1;
+    updateCount();
+  }
   return wrapper;
+}
+
+function setBubbleText(bubble, text) {
+  const body = bubble.querySelector(".bubble-text");
+  if (body) body.textContent = text;
+  scrollToEnd(chatLog);
 }
 
 function renderTrace(turn, anchor) {
@@ -61,7 +126,9 @@ function renderTrace(turn, anchor) {
     el(
       "summary",
       "",
-      `Traçabilité — ${trace.length} appel(s) MCP · ${total}\u202fms · intention « ${turn.intent?.kind || "?"} »`,
+      `${trace.length} appel${trace.length > 1 ? "s" : ""} MCP · ${total}\u202fms · intention « ${
+        turn.intent?.kind || "?"
+      } »`,
     ),
   );
   const list = el("ol", "trace-list");
@@ -72,7 +139,14 @@ function renderTrace(turn, anchor) {
       .join(", ");
     item.append(el("code", "", entry.tool));
     item.append(el("span", "trace-args", args));
-    item.append(el("span", "trace-summary", entry.ok ? entry.summary : entry.error || "erreur"));
+    item.append(
+      el(
+        "span",
+        "trace-status",
+        entry.ok ? `${entry.duration_ms}\u202fms` : `échec · ${entry.error || "inconnu"}`,
+      ),
+    );
+    if (entry.ok && entry.summary) item.append(el("span", "trace-summary", entry.summary));
     list.append(item);
   }
   if (turn.validation) {
@@ -83,6 +157,7 @@ function renderTrace(turn, anchor) {
         ? `A2UI validé : ${turn.validation.checked} message(s)`
         : `A2UI rejeté : ${(turn.validation.errors || []).join(" ; ")}`,
     );
+    status.append(el("span", "trace-status", turn.validation.ok ? "ok" : "rejeté"));
     list.append(status);
   }
   details.append(list);
@@ -98,9 +173,18 @@ function applyTurn(turn, { echo = false } = {}) {
   if (turn.degraded) bubble.classList.add("is-degraded");
   renderTrace(turn, bubble);
 
+  // Le bandeau de réponse décrit ce que la surface contient, même quand il n'y
+  // a rien à rendre : un état vide explicite vaut mieux qu'un bandeau périmé.
+  const kinds = { create: "surface créée", update: "données mises à jour", none: "aucune surface" };
+  surfaceMeta.textContent = [turn.surfaceId || "—", kinds[turn.mode] || turn.mode, turn.kind]
+    .filter(Boolean)
+    .join(" · ");
+
   if (!turn.messages?.length) return;
   if (textOnly) {
-    bubble.append(el("p", "text-only-note", "Mode texte seul : surface A2UI non rendue."));
+    bubble.append(
+      el("p", "text-only-note", "Mode texte seul : la surface A2UI n'est pas rendue."),
+    );
     return;
   }
 
@@ -108,29 +192,13 @@ function applyTurn(turn, { echo = false } = {}) {
     const accepted = renderer.apply(message);
     if (!accepted) console.warn("Message A2UI refusé", message);
   }
-  const kinds = { create: "surface créée", update: "données mises à jour", none: "aucune surface" };
-  surfaceMeta.textContent = `${turn.surfaceId || "—"} · ${kinds[turn.mode] || turn.mode} · ${turn.kind}`;
-  if (echo) surfaceHost.scrollTop = 0;
+  // La première surface remplace l'écran d'accueil : il n'a plus de raison
+  // d'occuper la page une fois la réponse affichée.
+  document.getElementById("surface-welcome")?.remove();
+  if (echo) revealPanel();
 }
 
 // ── Appels réseau ──────────────────────────────────────────────────────────
-
-// Jeton optionnel : l'API peut être protégée (LPO_WEB_TOKEN). Il est fourni une
-// fois par l'URL (`?token=…`), gardé en mémoire, puis retiré de la barre
-// d'adresse pour ne pas rester dans l'historique ni dans les journaux du proxy.
-const accessToken = (() => {
-  const url = new URL(window.location.href);
-  const token = url.searchParams.get("token");
-  if (token) {
-    url.searchParams.delete("token");
-    window.history.replaceState(null, "", url.toString());
-  }
-  return token || "";
-})();
-
-function authHeaders(extra = {}) {
-  return accessToken ? { ...extra, Authorization: `Bearer ${accessToken}` } : extra;
-}
 
 async function api(path, body) {
   const response = await fetch(path, {
@@ -153,31 +221,33 @@ async function api(path, body) {
 
 async function ask(question) {
   if (busy) return;
-  busy = true;
-  sendButton.disabled = true;
+  setBusy(true);
   addMessage("user", question);
   const pending = addMessage("assistant", "Interrogation du serveur de données…");
   pending.classList.add("is-pending");
   try {
     const turn = await api("/api/ask", { question, conversationId });
     pending.remove();
+    turns = Math.max(0, turns - 1);
+    updateCount();
     applyTurn(turn, { echo: true });
   } catch (error) {
     pending.remove();
+    turns = Math.max(0, turns - 1);
+    updateCount();
     addMessage(
       "assistant",
-      `Je ne peux pas répondre : ${error.message}. Aucun chiffre n'est affiché sans données vérifiées.`,
-    ).classList.add("is-degraded");
+      `Réponse indisponible : ${error.message}. Aucun chiffre n'est affiché sans données vérifiées.`,
+    ).classList.add("is-error");
   } finally {
-    busy = false;
-    sendButton.disabled = false;
+    setBusy(false);
     input.focus();
   }
 }
 
 async function handleAction(action) {
   if (busy) return;
-  busy = true;
+  setBusy(true);
   try {
     const turn = await api("/api/action", {
       conversationId,
@@ -191,13 +261,19 @@ async function handleAction(action) {
     );
     renderTrace(turn, bubble);
     for (const message of turn.messages || []) renderer.apply(message);
-    surfaceMeta.textContent = `${turn.surfaceId} · ${turn.mode === "update" ? "données mises à jour" : "surface recréée"} · ${turn.kind}`;
+    surfaceMeta.textContent = [
+      turn.surfaceId,
+      turn.mode === "update" ? "données mises à jour" : "surface recréée",
+      turn.kind,
+    ]
+      .filter(Boolean)
+      .join(" · ");
   } catch (error) {
     addMessage("assistant", `Le filtre n'a pas pu être appliqué : ${error.message}`).classList.add(
-      "is-degraded",
+      "is-error",
     );
   } finally {
-    busy = false;
+    setBusy(false);
   }
 }
 
@@ -208,12 +284,12 @@ async function loadCatalog() {
     const info = await fetch("/api/catalog", { headers: authHeaders() }).then((response) =>
       response.json(),
     );
-    catalogInfo = info;
     protocolBadge.textContent = `A2UI ${info.protocolVersion} · ${info.components.length} composants`;
     protocolBadge.title = `${info.catalogId}\n${info.protocolDocs}`;
     renderer.catalog = info.catalog;
   } catch (error) {
     protocolBadge.textContent = "catalogue indisponible";
+    protocolBadge.title = String(error);
   }
 }
 
@@ -222,12 +298,9 @@ async function loadDataset() {
     const overview = await fetch("/api/dataset", { headers: authHeaders() }).then((response) =>
       response.json(),
     );
-    if (overview.is_demo) {
-      demoBadge.hidden = false;
-      demoBadge.title = overview.dataset_label || "Jeu de démonstration synthétique";
-    }
-    demoBadge.textContent = overview.is_demo ? "Démo — données synthétiques" : "Données réelles";
     demoBadge.hidden = false;
+    demoBadge.textContent = overview.is_demo ? "Démo — données synthétiques" : "Données réelles";
+    demoBadge.title = overview.dataset_label || overview.summary || "";
     renderer.loadGeo();
   } catch (error) {
     console.warn("aperçu du jeu de données indisponible", error);
@@ -251,18 +324,23 @@ document.getElementById("examples").addEventListener("click", (event) => {
 textOnlyButton.addEventListener("click", () => {
   textOnly = !textOnly;
   textOnlyButton.setAttribute("aria-pressed", String(textOnly));
-  textOnlyButton.classList.toggle("is-active", textOnly);
-  if (textOnly) {
-    surfaceHost.replaceChildren(
-      el(
-        "div",
-        "welcome",
-        "Mode texte seul actif : les réponses restent lisibles sans renderer A2UI.",
-      ),
+  surfaceHost.hidden = textOnly;
+  let note = document.querySelector(".text-only-note.surface-level");
+  if (textOnly && !note) {
+    note = el(
+      "p",
+      "text-only-note surface-level",
+      "Mode texte seul : les réponses restent lisibles sans renderer A2UI. Désactivez le mode pour revoir les surfaces.",
     );
+    surfaceHost.insertAdjacentElement("afterend", note);
+  } else if (!textOnly && note) {
+    note.remove();
   }
 });
 
+if (accessToken) tokenBadge.hidden = false;
+
+updateCount();
 loadCatalog();
 loadDataset();
-input.focus();
+if (window.matchMedia("(min-width: 641px)").matches) input.focus();
