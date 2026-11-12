@@ -191,12 +191,14 @@ API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest            # 138 tests
+.venv/bin/python -m pytest            # 148 tests
 ```
 
 Couverture : garde-fous SQL, confidentialité (floutage), contrat des outils MCP,
-serveur MCP réel en `stdio`, catalogue et gabarits A2UI, compréhension de
-l'intention, orchestrateur (create/update, dégradation, états vides), API web.
+serveur MCP réel en `stdio`, client MCP de production sur transport réel,
+catalogue et gabarits A2UI, compréhension de l'intention, orchestrateur
+(create/update, dégradation, états vides), API web, et **chaîne complète**
+(HTTP → agent → sous-processus MCP → SQLite) via `tests/test_web_e2e.py`.
 
 ## 7. Exemple bout en bout
 

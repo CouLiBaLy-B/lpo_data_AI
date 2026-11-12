@@ -77,9 +77,17 @@ validateur.
   client (`orchestrator/mcp_client.py`) choisit via `LPO_MCP_URL` (HTTP) ou
   `LPO_MCP_COMMAND` (stdio), et garde une **session persistante** protégée par
   un verrou asynchrone.
-- **Vérifié** : `tests/test_mcp_server.py` lance un vrai sous-processus serveur
-  via `mcp.Client(StdioServerParameters(...))` et vérifie noms d'outils,
-  `structured_content` et le comportement d'erreur.
+- **Vérifié** à deux niveaux :
+  - `tests/test_mcp_server.py` lance un vrai sous-processus serveur via
+    `mcp.Client(StdioServerParameters(...))` et vérifie noms d'outils,
+    `structured_content` et le comportement d'erreur ;
+  - `tests/test_mcp_client.py` exerce le **client de production**
+    (`orchestrator/mcp_client.py`) sur ce même transport : connexion paresseuse,
+    transmission de l'environnement au sous-processus, propagation du message
+    d'erreur, fermeture idempotente et reconnexion.
+- **Intégration complète** : `tests/test_web_e2e.py` ne substitue rien — le
+  `lifespan` de FastAPI démarre le sous-processus MCP et les requêtes HTTP
+  traversent HTTP → agent → client MCP → serveur → SQLite.
 
 ### 2.3 Renderer A2UI : renderer JavaScript autonome (`web/static/renderer.js`)
 
