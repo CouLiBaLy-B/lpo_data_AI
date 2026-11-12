@@ -352,8 +352,19 @@ inventée :
 1. question hors périmètre (`kind = "unknown"`) ;
 2. capacité absente du profil (ex. pas de coordonnées → pas de carte) ;
 3. agrégat vide (filtre trop restrictif) ;
-4. libellé d'espèce inconnu (l'agent propose alors les libellés réels via
-   `list_species`, et le dit).
+4. libellé cité mais absent du jeu de données (l'agent refuse et liste les
+   libellés réels).
+
+Le point 4 mérite un détail, parce qu'il a été appris sur l'extrait réel : une
+question sur le « Milan royal » adressée à `sensitive_areas` produisait une
+courbe de 169 lignes — toutes les zones, dont 131 sans espèce — sous le titre
+« Milan royal ». Les chiffres venaient bien de la base, la réponse était fausse.
+Désormais, une mention capitalisée introduite par « de/du/des/d'/l' » qui ne
+correspond ni au vocabulaire d'espèces ni aux zones connues est portée par
+`Intent.unknown_species` ; l'agent **n'appelle alors aucun outil** et affiche un
+état vide explicite. Le repli par mot distinctif ne s'applique plus aux
+qualificatifs (« royal »), qui faisaient correspondre « Aigle royal » à « Milan
+royal ».
 
 ### 5.3 Prompt système et few-shots A2UI
 

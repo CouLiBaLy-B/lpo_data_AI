@@ -19,6 +19,15 @@ import os
 from dataclasses import dataclass, field
 from typing import Literal
 
+#: Libellé des lignes sans espèce, réservé aux messages — jamais une espèce.
+NO_SPECIES_LABEL = "Sans espèce (zone réglementaire)"
+
+
+def _quote(name: str) -> str:
+    """Cite un identifiant de colonne déclaré par le profil (jamais utilisateur)."""
+    return f'"{name}"'
+
+
 Capability = Literal[
     "temporal",
     "species",
@@ -53,6 +62,10 @@ class SchemaProfile:
     sensitive: str | None = None
     structure: str | None = None
     id_column: str | None = None
+    #: ce que compte une ligne, au pluriel. « observations » pour une table
+    #: d'observations ; « enregistrements » pour des zones (l'extrait réel), où
+    #: appeler « observation » une zone réglementaire serait une erreur de sens.
+    records_label: str = "observations"
     #: valeurs considérées comme « protégée » (insensible à la casse)
     protected_values: tuple[str, ...] = ("protégée", "protegee", "protégé", "sensible")
     #: note affichée dans les surfaces (limites connues du jeu de données)
@@ -85,18 +98,40 @@ class SchemaProfile:
 
     @property
     def species_expr(self) -> str | None:
-        """Expression SQL du libellé d'espèce (fallback : identifiant lisible)."""
+        """Expression SQL du libellé d'espèce.
+
+        Les lignes **sans espèce** ne sont pas transformées en pseudo-espèce :
+        elles restent NULL et sont écartées des décomptes par espèce (voir
+        `species_where`). Sur l'extrait réel du dépôt, 131 zones purement
+        réglementaires n'ont pas de `species_id` : leur donner un libellé les
+        faisait passer pour « l'espèce la plus observée », ce qui est un chiffre
+        inventé, pas une donnée.
+
+        `CAST(CAST(...))` : `species_id` est stocké en REAL (10.0 → « 10 »), et
+        un CAST explicite en TEXT est nécessaire pour la concaténation.
+        """
         if self.species_label:
-            return self.species_label
+            return f"NULLIF(TRIM({_quote(self.species_label)}), '')"
         if self.species_key:
-            # `species_id` peut être NULL (zone purement réglementaire) : sans ce
-            # CASE, la concaténation renvoie NULL et l'espèce devient « nan ».
-            # CAST(CAST(...)) : `species_id` est stocké en REAL (10.0 → « 10 »).
             return (
-                f"CASE WHEN {self.species_key} IS NULL THEN 'Zone réglementaire' "
-                f"ELSE 'Espèce #' || CAST(CAST({self.species_key} AS INTEGER) AS TEXT) END"
+                f"'Espèce #' || CAST(CAST({_quote(self.species_key)} AS INTEGER) AS TEXT)"
             )
         return None
+
+    @property
+    def species_where(self) -> str | None:
+        """Prédicat SQL « cette ligne porte une espèce » (None = concept absent)."""
+        if self.species_label:
+            column = _quote(self.species_label)
+            return f"{column} IS NOT NULL AND TRIM({column}) <> ''"
+        if self.species_key:
+            return f"{_quote(self.species_key)} IS NOT NULL"
+        return None
+
+    @property
+    def species_is_numeric_key(self) -> bool:
+        """Vrai si l'espèce n'est connue que par un identifiant numérique."""
+        return bool(self.species_key) and not self.species_label
 
 
 OBSERVATIONS = SchemaProfile(
@@ -142,6 +177,7 @@ SENSITIVE_AREAS = SchemaProfile(
     sensitive=None,
     structure="structure",
     id_column="id",
+    records_label="enregistrements",
     notes=[
         "Le schéma réel ne contient pas de coordonnées : la carte n'est pas disponible.",
         "Les espèces ne sont connues que par leur identifiant numérique (pas de nom).",

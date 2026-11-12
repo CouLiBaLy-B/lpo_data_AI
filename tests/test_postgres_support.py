@@ -23,18 +23,20 @@ Un test d'intégration facultatif s'exécute si ``LPO_TEST_PG_URL`` est défini 
 from __future__ import annotations
 
 import os
+import sqlite3
 from pathlib import Path
 
 import pytest
 
-from lpo_data_mcp.profiles import OBSERVATIONS
-from scripts.create_indexes import plan_statements
+from lpo_data_mcp.profiles import OBSERVATIONS, SENSITIVE_AREAS
+from scripts.create_indexes import plan_indexes, plan_statements
 from src.config.settings import DatabaseSettings
 from src.database import postgres
 
-REQUIREMENTS = (Path(__file__).resolve().parents[1] / "requirements.txt").read_text(
-    encoding="utf-8"
-)
+ROOT = Path(__file__).resolve().parents[1]
+REQUIREMENTS = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+DDL = (ROOT / "docs" / "sql" / "sensitive_areas_postgres.sql").read_text(encoding="utf-8")
+REAL_EXTRACT = ROOT / "data" / "sensitive_areas.db"
 
 
 # ── DSN ─────────────────────────────────────────────────────────────────────
@@ -181,6 +183,46 @@ def test_sqlite_ddl_is_unchanged() -> None:
     for statement in statements:
         assert statement.startswith("CREATE INDEX IF NOT EXISTS")
         assert "CONCURRENTLY" not in statement
+
+
+# ── Schéma de production dérivé de l'extrait réel ───────────────────────────
+
+
+@pytest.mark.skipif(not REAL_EXTRACT.exists(), reason="extrait data/sensitive_areas.db absent")
+def test_postgres_ddl_covers_every_column_of_the_real_extract() -> None:
+    """Le DDL de production ne doit pas oublier une colonne de l'extrait.
+
+    Une colonne manquante ne se voit qu'au moment du chargement, en production.
+    """
+    with sqlite3.connect(REAL_EXTRACT) as connection:
+        columns = [row[1] for row in connection.execute("PRAGMA table_info(sensitive_areas)")]
+    assert columns
+    for column in columns:
+        # `Pays` devient `pays` : PostgreSQL replie les identifiants non cités.
+        expected = column.lower()
+        assert expected in DDL.lower(), f"colonne absente du DDL : {column}"
+
+
+def test_postgres_ddl_declares_the_indexes_the_script_creates() -> None:
+    for name, _columns in plan_indexes(SENSITIVE_AREAS):
+        assert name in DDL, f"index attendu par le script absent du DDL : {name}"
+
+
+def test_postgres_ddl_indexes_are_created_concurrently() -> None:
+    """Sur une table déjà lue par l'ETL, un index bloquant arrête le service."""
+    index_lines = [
+        line.strip()
+        for line in DDL.splitlines()
+        if line.strip().startswith("CREATE INDEX")
+    ]
+    assert index_lines
+    assert all("CONCURRENTLY" in line for line in index_lines)
+
+
+def test_postgres_ddl_never_declares_species_id_as_real() -> None:
+    """`species_id` est un identifiant entier ; l'extrait SQLite le stocke en REAL."""
+    assert "species_id      integer" in DDL
+    assert "species_id real" not in DDL
 
 
 # ── Dépendances ─────────────────────────────────────────────────────────────

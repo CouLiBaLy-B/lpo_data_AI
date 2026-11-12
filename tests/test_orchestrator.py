@@ -186,12 +186,43 @@ def test_repository_profile_yields_empty_map_not_fake_points(assistant_for_repo)
     turn = ask(assistant_for_repo, "Carte des observations de Busard cendré ce printemps ?")
     assert turn.kind == "empty"
     model = turn.messages[0]["createSurface"]["dataModel"]
-    assert "coordonné" in model["notices"][0]["message"].lower()
+    messages = " ".join(n.get("message", "") for n in model["notices"]).lower()
+    # L'espèce n'existe pas dans l'extrait : refus explicite…
+    assert "busard cendré" in messages and "n'est pas reconnu" in messages
+    # …et la limite de schéma reste annoncée (aucune coordonnée dans la table).
+    assert "coordonné" in messages
     assert "MapChart" not in {
         c["component"] for c in turn.messages[0]["createSurface"]["components"]
     }
 
 
+def test_repository_profile_refuses_a_species_it_does_not_contain(assistant_for_repo):
+    """L'extrait réel ne contient que 4 identifiants d'espèces, sans aucun nom.
+
+    Répondre « 169 observations » à une question sur le Milan royal serait
+    exact arithmétiquement et faux sur le fond : ces lignes ne le concernent pas.
+    """
+    turn = ask(
+        assistant_for_repo,
+        "Évolution des observations de Milan royal sur les 10 dernières années ?",
+    )
+    assert turn.kind == "empty"
+    assert turn.validation["ok"] is True
+    assert "Milan royal" in turn.text
+    assert "aucun chiffre" in turn.text.lower()
+    # Aucun outil de données n'est appelé : rien à mesurer sur une espèce absente.
+    components = turn.messages[0]["createSurface"]["components"]
+    assert "LineChart" not in {c["component"] for c in components}
+
+
 @pytest.fixture()
 def assistant_for_repo(repo_client):
     return LpoAssistant(repo_client, today=TODAY, use_llm_intent=False)
+
+
+def test_repository_profile_counts_records_not_observations(assistant_for_repo):
+    """L'extrait contient des zones, pas des observations : le texte doit le dire."""
+    turn = ask(assistant_for_repo, "Évolution du nombre de zones par an")
+    assert turn.kind == "trend"
+    assert "enregistrements" in turn.text
+    assert "observations au total" not in turn.text

@@ -29,7 +29,7 @@ from .models import (
     SpeciesInfo,
     SpeciesListResult,
 )
-from .profiles import SchemaProfile, detect_profile
+from .profiles import NO_SPECIES_LABEL, SchemaProfile, detect_profile
 from .sql import (
     GROUP_BY,
     METRICS,
@@ -66,6 +66,9 @@ class LpoDataService:
 
     def __init__(self, profile: SchemaProfile | None = None):
         self._profile = profile
+        #: lignes sans espèce (zones purement réglementaires), calculées une fois
+        #: par processus : ce compte ne sert qu'aux messages, jamais aux chiffres.
+        self._excluded_species: int | None = None
 
     # ── Profil & introspection ────────────────────────────────────────────
 
@@ -82,6 +85,7 @@ class LpoDataService:
     def reset(self) -> None:
         """Oublie le profil détecté (utile si la base a été rechargée)."""
         self._profile = None
+        self._excluded_species = None
 
     @property
     def dialect(self) -> str:
@@ -209,6 +213,39 @@ class LpoDataService:
                 where.add(f"NOT ({sensitive_expr})")
         return where
 
+    def _unspecified_species_count(self) -> int:
+        """Nombre de lignes qui ne portent aucune espèce.
+
+        Sur l'extrait réel du dépôt, 131 des 169 lignes sont des zones
+        réglementaires sans `species_id`. Elles ne sont pas des espèces : elles
+        sont donc exclues des listes, classements et fiches, et **annoncées**
+        (sinon l'utilisateur croirait le jeu de données complet).
+        """
+        profile = self.profile
+        if not profile.species_where:
+            return 0
+        if self._excluded_species is None:
+            try:
+                rows = self._query(
+                    f"SELECT COUNT(*) AS n FROM {self._table()} "
+                    f"WHERE NOT ({profile.species_where})"
+                )
+                self._excluded_species = int(rows[0]["n"]) if rows else 0
+            except Exception:  # noqa: BLE001 - un compteur ne doit pas casser l'outil
+                return 0
+        return self._excluded_species
+
+    def _exclusion_note(self, total: int | None = None) -> str | None:
+        """Phrase d'explication des lignes écartées, ou None s'il n'y en a pas."""
+        excluded = self._unspecified_species_count()
+        if not excluded:
+            return None
+        scope = f" sur {_num(total)}" if total else ""
+        return (
+            f"{_num(excluded)} enregistrement(s){scope} ne portent aucune espèce "
+            f"({NO_SPECIES_LABEL}) : exclus des décomptes par espèce."
+        )
+
     # ── Outil : aperçu du jeu de données ─────────────────────────────────
 
     def dataset_overview(self) -> DatasetOverview:
@@ -225,8 +262,12 @@ class LpoDataService:
                     else ""
                 )
                 + (
-                    f", COUNT(DISTINCT {profile.species_expr}) AS n_species"
-                    if profile.species_expr
+                    # Les lignes sans espèce ne doivent pas gonfler le décompte :
+                    # `COUNT(DISTINCT NULL)` les ignore déjà, mais le CASE rend la
+                    # règle explicite et identique sur SQLite et PostgreSQL.
+                    f", COUNT(DISTINCT CASE WHEN {profile.species_where} "
+                    f"THEN {profile.species_expr} END) AS n_species"
+                    if profile.species_expr and profile.species_where
                     else ""
                 )
                 + (
@@ -248,6 +289,7 @@ class LpoDataService:
                     str(r["label"])
                     for r in self._query(
                         f"SELECT {profile.species_expr} AS label, COUNT(*) AS n FROM {table} "
+                        f"WHERE {profile.species_where} "
                         "GROUP BY 1 ORDER BY n DESC LIMIT 5"
                     )
                 ]
@@ -266,6 +308,10 @@ class LpoDataService:
             summary = f"{dataset_label}. " + summary
         if profile.notes:
             summary += " Limites : " + " ".join(profile.notes)
+        exclusion_note = self._exclusion_note(total)
+        if exclusion_note:
+            warnings.append(exclusion_note)
+            summary += " " + exclusion_note
         configured_species = privacy_rules.configured_sensitive_species()
         if configured_species:
             warnings.append(
@@ -283,6 +329,7 @@ class LpoDataService:
             capabilities=sorted(profile.capabilities),
             columns=columns,
             total_rows=total,
+            records_label=profile.records_label,
             date_min=str(row["dmin"]) if row.get("dmin") else None,
             date_max=str(row["dmax"]) if row.get("dmax") else None,
             species_count=int(row["n_species"]) if row.get("n_species") is not None else None,
@@ -351,6 +398,8 @@ class LpoDataService:
 
         limit_i, offset_i = limit_offset(limit, offset, max_limit=MAX_LIMIT)
         where = Where()
+        if profile.species_where:
+            where.add(profile.species_where)
         if query:
             where.add(f"LOWER({expr}) LIKE :q", q=f"%{query.strip().lower()}%")
 
@@ -396,6 +445,9 @@ class LpoDataService:
         warnings: list[str] = []
         if profile.notes:
             warnings.extend(profile.notes[:2])
+        exclusion_note = self._exclusion_note()
+        if exclusion_note:
+            warnings.append(exclusion_note)
         summary = (
             f"{_num(total)} espèce(s) distincte(s)"
             + (f" correspondant à « {query} »" if query else "")
@@ -479,7 +531,9 @@ class LpoDataService:
             observations.append(
                 Observation(
                     id=str(row["id"]) if row.get("id") is not None else None,
-                    species=str(row["species"]),
+                    species=(
+                        str(row["species"]) if row.get("species") is not None else None
+                    ),
                     event_date=str(row["event_date"]) if row.get("event_date") else None,
                     count=float(row["count"]) if row.get("count") is not None else None,
                     department=row.get("department"),
@@ -635,11 +689,15 @@ class LpoDataService:
             where.add(f"{ident(column or '')} IS NOT NULL AND TRIM({ident(column or '')}) != ''")
             order_clause = "ORDER BY value DESC"
         elif group_by == "species":
+            if profile.species_where:
+                where.add(profile.species_where)
             group_cols = f"{profile.species_expr} AS k"
             order_clause = "ORDER BY value DESC"
         elif group_by in {"species_month", "species_year"}:
             level = "month" if group_by == "species_month" else "year"
             expr, _label = time_bucket(profile.event_date or "", level, self.dialect)
+            if profile.species_where:
+                where.add(profile.species_where)
             group_cols = f"{profile.species_expr} AS series, {expr} AS k"
             # Tri chronologique d'abord : une éventuelle troncature reste
             # interprétable (elle coupe la fin de l'historique, pas une espèce).
@@ -756,15 +814,27 @@ class LpoDataService:
             raise QueryError("Paramètre 'species' obligatoire.")
         name = str(species).strip()
 
-        listing = self.list_species(query=name, limit=5)
-        match = next(
-            (s for s in listing.species if s.label.lower() == name.lower()),
-            listing.species[0] if listing.species else None,
-        )
+        # Correspondance **exacte** uniquement : prendre « le premier résultat »
+        # ferait répondre sur le Milan royal à une question sur le Héron.
+        listing = self.list_species(query=name, limit=50)
+        match = next((s for s in listing.species if s.label.lower() == name.lower()), None)
+        if match is None and profile.species_is_numeric_key:
+            digit_groups = re.findall(r"\d+", name)
+            if digit_groups:
+                wanted = f"Espèce #{int(digit_groups[0])}"
+                match = next((s for s in listing.species if s.label == wanted), None)
         if match is None:
+            available = ", ".join(s.label for s in self.list_species(limit=5).species)
+            hint = ""
+            if profile.species_where and self._unspecified_species_count():
+                hint = (
+                    f" {_num(self._unspecified_species_count())} enregistrement(s) ne "
+                    f"portent aucune espèce ({NO_SPECIES_LABEL}) et ne peuvent donc pas "
+                    "faire l'objet d'une fiche."
+                )
             raise QueryError(
-                f"Espèce « {name} » introuvable dans le jeu de données. "
-                "Utiliser list_species pour découvrir les libellés disponibles."
+                f"Espèce « {name} » introuvable (correspondance exacte exigée). "
+                f"Espèces disponibles : {available or 'aucune'}.{hint}"
             )
 
         monthly = self.aggregate_observations(group_by="month", species=[match.label], limit=120)

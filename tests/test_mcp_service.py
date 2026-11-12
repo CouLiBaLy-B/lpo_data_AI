@@ -159,12 +159,57 @@ def test_repo_profile_cannot_map(repo_service):
     assert any("coordinates" in w for w in result.meta.warnings)
 
 
-def test_repo_profile_species_ids_are_labelled(repo_service):
-    listing = repo_service.list_species(limit=10)
-    assert listing.species
-    assert all(
-        s.label == "Zone réglementaire" or s.label.startswith("Espèce #") for s in listing.species
+def test_repo_profile_does_not_invent_a_species_for_regulatory_zones(repo_service):
+    """131 des 169 lignes de l'extrait sont des zones sans espèce.
+
+    Leur donner un libellé les faisait classer comme « l'espèce la plus
+    observée » : un chiffre inventé. Elles sont désormais écartées et annoncées.
+    """
+    listing = repo_service.list_species(limit=50)
+    assert len(listing.species) == 4
+    assert listing.total == 4
+    assert all(s.label.startswith("Espèce #") for s in listing.species)
+    assert "Zone réglementaire" not in [s.label for s in listing.species]
+    assert any("aucune espèce" in warning for warning in listing.meta.warnings)
+
+
+def test_repo_profile_overview_counts_only_real_species(repo_service):
+    overview = repo_service.dataset_overview()
+    assert overview.total_rows == 169
+    assert overview.species_count == 4
+    assert all(label.startswith("Espèce #") for label in overview.sample_species)
+    assert any(
+        "131" in warning and "aucune espèce" in warning for warning in overview.meta.warnings
     )
+
+
+def test_repo_profile_species_aggregation_excludes_rows_without_species(repo_service):
+    result = repo_service.aggregate_observations(group_by="species")
+    assert result.points
+    assert all(point.label.startswith("Espèce #") for point in result.points)
+    # 169 lignes − 131 zones réglementaires = 38 lignes rattachées à une espèce.
+    assert sum(point.value for point in result.points) == 38
+
+
+def test_repo_profile_rows_without_species_are_null_not_the_string_none(repo_service):
+    page = repo_service.get_observations(limit=10)
+    assert page.observations
+    assert all(
+        observation.species is None or observation.species.startswith("Espèce #")
+        for observation in page.observations
+    )
+    assert any(observation.species is None for observation in page.observations)
+
+
+def test_repo_profile_species_lookup_requires_an_exact_match(repo_service):
+    detail = repo_service.get_species_info("10")
+    assert detail.species.label == "Espèce #10"
+
+    with pytest.raises(QueryError) as error:
+        repo_service.get_species_info("Zone réglementaire")
+    message = str(error.value)
+    assert "aucune espèce" in message
+    assert "Espèce #10" in message
 
 
 def test_repo_profile_metric_falls_back_with_warning(repo_service):

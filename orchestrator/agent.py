@@ -384,6 +384,13 @@ class LpoAssistant:
             intent = self._refine(intent)
             conversation.last_intent = intent
 
+            if intent.unknown_species and intent.kind != "unknown":
+                # Aucun outil n'est appelé : on ne peut pas répondre sur une espèce
+                # que le jeu de données ne contient pas, et les données des autres
+                # espèces ne sont pas une approximation acceptable.
+                view = view_builder.build_unknown_term(intent, ctx, intent.unknown_species)
+                return self._finalise(conversation, view, view.text, trace, replace_surface=True)
+
             if intent.kind == "unknown":
                 view = view_builder.build_unknown(
                     intent,

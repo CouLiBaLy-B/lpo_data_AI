@@ -202,7 +202,7 @@ API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest            # 298 tests (1 ignoré : intégration PostgreSQL)
+.venv/bin/python -m pytest            # 314 tests (1 ignoré : intégration PostgreSQL)
 ```
 
 Afficher le prompt système et les exemples few-shot utilisés par l'agent :
@@ -276,7 +276,13 @@ DB_STATEMENT_TIMEOUT_MS=15000 \
 - Les index se créent en `CONCURRENTLY` (table disponible pendant l'indexation),
   avec détection des index laissés invalides par une interruption.
 
-Les tests unitaires de ce support (`tests/test_postgres_support.py`, 33 tests)
+Le schéma PostgreSQL attendu est fourni dans
+[`docs/sql/sensitive_areas_postgres.sql`](docs/sql/sensitive_areas_postgres.sql),
+dérivé de l'extrait réel `data/sensitive_areas.db` (169 lignes, 50 zones,
+131 lignes sans espèce) : types, commentaires, index `CONCURRENTLY` aux mêmes
+noms que le script d'indexation, exemple de chargement.
+
+Les tests unitaires de ce support (`tests/test_postgres_support.py`, 37 tests)
 tournent **sans serveur** ; le test d'intégration s'active avec
 `LPO_TEST_PG_URL=postgresql://…` et vérifie, sur une vraie base, que la session
 refuse l'écriture et que les timeouts sont posés.

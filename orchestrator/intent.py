@@ -67,6 +67,10 @@ class Intent:
     rationale: str = ""
     raw_question: str = ""
     filters: dict[str, str] = field(default_factory=dict)
+    #: Espèces citées dans la question mais absentes du jeu de données exposé.
+    #: Une liste non vide interdit de répondre : les données d'une autre espèce
+    #: ne peuvent pas être attribuées à celle-ci.
+    unknown_species: list[str] = field(default_factory=list)
 
     @classmethod
     def from_model(cls, model: IntentModel, *, question: str = "", **overrides: Any) -> Intent:
@@ -192,16 +196,164 @@ def extract_species(question: str, vocabulary: list[str]) -> list[str]:
     if positions:
         return sorted(positions, key=lambda label: positions[label])
 
-    # Repli : mot distinctif unique (ex. « milan » → Milan royal)
+    # Repli : premier mot distinctif unique (ex. « milan » → Milan royal).
+    #
+    # Le repli ne s'applique **jamais** à un qualificatif (« royal », « noir ») :
+    # « Aigle royal » n'est pas « Milan royal ». Sans cette restriction, une
+    # espèce absente du jeu de données était silencieusement remplacée par une
+    # autre, et ses chiffres étaient présentés comme ceux de l'espèce demandée.
     found: list[str] = []
     tokens = [t for t in normalized_question.split() if len(t) >= 4]
+    vocabulary_tokens = {label: normalize(label).split() for label in vocabulary}
     for label in vocabulary:
-        key_tokens = normalize(label).split()
+        key_tokens = vocabulary_tokens[label]
         for token in tokens:
-            matches = [candidate for candidate in vocabulary if token in normalize(candidate)]
-            if len(matches) == 1 and matches[0] == label and token in key_tokens:
-                if label not in found:
-                    found.append(label)
+            matches = [
+                candidate
+                for candidate, candidate_tokens in vocabulary_tokens.items()
+                if token in candidate_tokens
+            ]
+            if len(matches) != 1 or matches[0] != label:
+                continue
+            if not key_tokens or key_tokens[0] != token:
+                continue
+            if label not in found:
+                found.append(label)
+    return found
+
+
+#: Mots qui introduisent une espèce dans une question naturelle.
+_SPECIES_INTRODUCERS = ("de", "du", "des", "d'", "l'", "pour", "chez", "espece")
+#: Élisions fréquentes accolées au nom : « de l'Aigle royal », « d'Aigle royal ».
+_ELISION_RE = re.compile(r"^(?:l|d|qu|j|m|t|s)[’']", re.IGNORECASE)
+#: Mots courants qui ne prolongent jamais un nom d'espèce (« Milan royal sur… »).
+_NOT_A_NAME_CONTINUATION = {
+    "sur",
+    "dans",
+    "en",
+    "au",
+    "aux",
+    "avec",
+    "par",
+    "pour",
+    "depuis",
+    "entre",
+    "et",
+    "ou",
+    "de",
+    "du",
+    "des",
+    "la",
+    "le",
+    "les",
+    "un",
+    "une",
+    "ce",
+    "cette",
+    "ces",
+    "son",
+    "sa",
+    "ses",
+    "est",
+    "sont",
+    "ont",
+    "plus",
+    "moins",
+    "tous",
+    "toutes",
+    "sur",
+    "chaque",
+    "quel",
+    "quelle",
+}
+#: Capitalisés fréquents qui ne désignent pas une espèce (début de question, lieux).
+_NOT_A_SPECIES = {
+    "top",
+    "carte",
+    "fiche",
+    "evolution",
+    "comparaison",
+    "compare",
+    "observations",
+    "observation",
+    "zones",
+    "zone",
+    "especes",
+    "espece",
+    "france",
+    "lpo",
+    "jeu",
+    "donnees",
+    "quelle",
+    "quelles",
+    "combien",
+    "quand",
+    "ou",
+}
+
+
+def extract_unknown_species(
+    question: str,
+    vocabulary: list[str],
+    *,
+    areas: tuple[list[str], list[str]] | None = None,
+) -> list[str]:
+    """Mentions d'espèce plausibles **absentes** du vocabulaire exposé.
+
+    Pourquoi ne pas se contenter de répondre « toutes espèces » : la question
+    « évolution des observations de Milan royal » sur un jeu de données qui ne
+    contient que des identifiants numériques produirait une courbe honnête mais
+    une réponse trompeuse — elle parle de 169 lignes qui ne concernent pas le
+    Milan royal. Mieux vaut refuser explicitement.
+
+    La détection reste volontairement **conservatrice** : un mot capitalisé
+    (hors début de phrase) introduit par « de/du/des/d'/pour/chez », qui ne
+    correspond ni à une espèce connue, ni à une zone connue, ni à un mois. Une
+    formulation inhabituelle ne doit pas bloquer une question valide.
+    """
+    text = question or ""
+    known = {normalize(label) for label in vocabulary}
+    known_tokens = {token for label in vocabulary for token in normalize(label).split()}
+    area_words: set[str] = set()
+    for group in areas or ([], []):
+        for area in group:
+            area_words.update(normalize(area).split())
+    month_words = set(_MONTHS)
+    words = re.findall(r"[\wÀ-ÖØ-öø-ÿ'’-]+", text)
+    found: list[str] = []
+    for index, word in enumerate(words):
+        if index == 0:
+            continue
+        # L'article élidé est accolé au nom (« l'Aigle ») : il est retiré avant
+        # de tester la majuscule, sinon le nom serait ignoré.
+        candidate = _ELISION_RE.sub("", word)
+        if not re.match(r"^[A-ZÀ-ÖØ-Þ]", candidate):
+            continue
+        if candidate.isupper() or len(candidate) < 3:
+            continue
+        introducer = normalize(words[index - 1]) if index else ""
+        if introducer not in _SPECIES_INTRODUCERS:
+            continue
+        # Libellé composé : « Milan royal », « Busard cendré ». Un seul mot
+        # suivant, et jamais un mot grammatical (« Milan royal sur… »).
+        parts = [candidate]
+        if index + 1 < len(words):
+            follower = words[index + 1]
+            if (
+                re.match(r"^[a-zà-öø-ÿ]", follower)
+                and len(follower) > 2
+                and normalize(follower) not in _NOT_A_NAME_CONTINUATION
+            ):
+                parts.append(follower)
+        label = " ".join(parts)
+        key = normalize(label)
+        first = normalize(candidate)
+        if key in known or first in known_tokens or first in area_words:
+            continue
+        if first in _NOT_A_SPECIES or first in month_words or any(ch.isdigit() for ch in word):
+            continue
+        if label not in found:
+            found.append(label)
     return found
 
 
@@ -352,6 +504,11 @@ class IntentParser:
     # — heuristique
     def heuristic(self, question: str, *, today: date | None = None) -> Intent:
         species = extract_species(question, self.species_vocab)
+        unknown = extract_unknown_species(
+            question,
+            self.species_vocab,
+            areas=(self.departments, self.regions),
+        )
         start, end, label, preset = extract_period(question, today)
         department, region = extract_area(question, self.departments, self.regions)
         metric = extract_metric(question)
@@ -384,6 +541,7 @@ class IntentParser:
             granularity=granularity,
             rationale="Heuristique déterministe (mots-clés + vocabulaire MCP).",
             raw_question=question,
+            unknown_species=unknown[:3],
         )
 
     # — LLM (optionnel)
@@ -418,6 +576,15 @@ class IntentParser:
 
         # Garde-fous : libellés d'espèces obligatoirement présents dans le vocabulaire
         species = [s for s in payload.species if s in self.species_vocab][:3]
+        # Un libellé proposé par le modèle mais absent du vocabulaire n'est pas
+        # silencieusement remplacé par « toutes espèces » : il devient une
+        # mention inconnue, qui empêche de répondre.
+        unknown = [s for s in payload.species if s not in self.species_vocab]
+        for candidate in extract_unknown_species(
+            question, self.species_vocab, areas=(self.departments, self.regions)
+        ):
+            if candidate not in unknown:
+                unknown.append(candidate)
         start, end = _safe_iso(payload.start_date), _safe_iso(payload.end_date)
         if not start and payload.period_preset:
             start, end, label = resolve_period(payload.period_preset, today)
@@ -449,6 +616,7 @@ class IntentParser:
             start_date=start,
             end_date=end,
             rationale=payload.rationale or "Intention extraite par le LLM.",
+            unknown_species=unknown[:3],
         )
 
     def parse(

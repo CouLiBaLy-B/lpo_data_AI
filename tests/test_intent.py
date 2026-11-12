@@ -19,6 +19,7 @@ from orchestrator.intent import (
     extract_metric,
     extract_period,
     extract_species,
+    extract_unknown_species,
     guess_kind,
     has_domain_signal,
     normalize,
@@ -95,6 +96,56 @@ def test_extract_species_falls_back_on_distinctive_word():
 
 def test_extract_species_unknown_returns_empty():
     assert extract_species("le dodo de l'île Maurice", SPECIES) == []
+
+
+def test_unknown_species_are_detected_instead_of_silently_dropped():
+    """« Milan royal » absent du vocabulaire ne doit pas devenir « toutes espèces »."""
+    assert extract_unknown_species(
+        "Évolution des observations de Milan royal sur les 10 dernières années ?", []
+    ) == ["Milan royal"]
+
+
+def test_known_species_are_never_flagged_as_unknown():
+    assert extract_unknown_species("évolution du Milan royal", ["Milan royal"]) == []
+    assert extract_unknown_species("carte du Busard cendré", ["Busard cendré"]) == []
+
+
+def test_known_areas_are_not_taken_for_species():
+    assert (
+        extract_unknown_species(
+            "observations de Gironde en 2020", ["Milan royal"], areas=(["Gironde"], [])
+        )
+        == []
+    )
+
+
+def test_a_grammatical_word_never_extends_a_species_name():
+    assert extract_unknown_species(
+        "Évolution des observations de Milan royal sur 10 ans", []
+    ) == ["Milan royal"]
+
+
+def test_ordinary_questions_are_not_flagged(parser):
+    """Une formulation sans nom d'espèce ne doit pas être bloquée."""
+    for question in (
+        "Évolution du nombre de zones par département",
+        "Top 10 des espèces observées en 2025",
+        "Quelles observations à Paris en 2020 ?",
+    ):
+        assert parser.heuristic(question).unknown_species == []
+
+
+def test_parser_exposes_the_unknown_species(parser):
+    # L'Aigle royal ne figure pas dans le vocabulaire de test.
+    intent = parser.heuristic("Fiche espèce de l'Aigle royal")
+    assert intent.unknown_species == ["Aigle royal"]
+    assert intent.species == []
+
+
+def test_known_species_mentioned_with_an_article_is_resolved(parser):
+    intent = parser.heuristic("Fiche espèce du Héron cendré")
+    assert intent.species == ["Héron cendré"]
+    assert intent.unknown_species == []
 
 
 @pytest.mark.parametrize(

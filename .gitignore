@@ -16,3 +16,9 @@ data/lpo_demo.db-journal
 data/lpo_demo.db-wal
 data/lpo_demo.db-shm
 logs/*.log
+
+# Fichiers annexes SQLite (recréés à l'ouverture) : jamais versionnés, un
+# `-wal` peut contenir des pages absentes du fichier principal.
+data/*.db-shm
+data/*.db-wal
+data/*.db-journal

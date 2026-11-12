@@ -88,6 +88,11 @@ class ViewContext:
         return str(self.overview.get("profile") or "?")
 
     @property
+    def records_unit(self) -> str:
+        """Ce que compte une ligne dans ce jeu de données (au pluriel)."""
+        return str(self.overview.get("records_label") or "observations")
+
+    @property
     def notes(self) -> list[str]:
         return [str(n) for n in self.overview.get("notes") or []]
 
@@ -223,7 +228,7 @@ def build_trend(
         )
 
     metric = str(agg.get("metric") or intent.metric)
-    unit = "individus" if metric == "individuals" else "observations"
+    unit = "individus" if metric == "individuals" else ctx.records_unit
     # Accord au pluriel : « observations cumulées » mais « individus cumulés ».
     cumul = "Individus cumulés" if metric == "individuals" else "Observations cumulées"
     series = extra_series or [{"label": intent.species_label, "points": _points_to_x(points)}]
@@ -334,7 +339,7 @@ def build_ranking(intent: Intent, agg: dict, ctx: ViewContext) -> BuiltView:
         )
 
     metric = str(agg.get("metric") or "observations")
-    unit = "individus" if metric == "individuals" else "observations"
+    unit = "individus" if metric == "individuals" else ctx.records_unit
     items = [
         {
             "label": str(p.get("label") or p.get("key")),
@@ -747,3 +752,36 @@ def _empty_view(
 def build_unknown(intent: Intent, ctx: ViewContext, *, reason: str) -> BuiltView:
     """Question hors périmètre : on explique au lieu de deviner."""
     return _empty_view(intent, ctx, title="Question hors périmètre", reason=reason)
+
+
+def build_unknown_term(intent: Intent, ctx: ViewContext, terms: list[str]) -> BuiltView:
+    """Terme cité (espèce, zone) absent du jeu de données : on refuse de répondre.
+
+    Constat tiré de l'extrait réel du dépôt : « évolution des observations de
+    Milan royal » y produisait une courbe de 169 lignes — celles de toutes les
+    zones, dont 131 sans aucune espèce. Le chiffre était exact, la réponse
+    fausse : elle attribuait au Milan royal des données qui ne le concernent pas.
+    """
+    quoted = ", ".join(f"« {term} »" for term in terms)
+    known = ctx.species_options
+    if known:
+        sample = ", ".join(known[:5]) + ("…" if len(known) > 5 else "")
+        available = f"Espèces présentes dans le jeu de données : {sample}."
+    else:
+        available = "Le jeu de données exposé ne contient aucun nom d'espèce."
+    reason = (
+        f"{quoted} n'est pas reconnu dans le jeu de données exposé — ni espèce, ni zone "
+        f"connue de ce jeu. {available} Aucun chiffre n'est affiché : attribuer à ce terme "
+        "les données d'une autre espèce ou d'une autre zone serait faux."
+    )
+    notices = [
+        notice("warning", "Terme non reconnu", reason),
+        *ctx.dataset_notices(),
+    ]
+    data = {
+        "header": _header(intent, "Réponse impossible en l'état"),
+        "notices": notices,
+        "footer": {"source": ctx.source_line()},
+    }
+    text = f"{reason} Précisez le libellé ou la zone : « {intent.raw_question} »."
+    return BuiltView("empty", data, text)

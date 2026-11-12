@@ -66,7 +66,9 @@ class Observation(BaseModel):
     """Une observation individuelle (coordonnées déjà dégradées si nécessaire)."""
 
     id: str | None = None
-    species: str
+    #: NULL quand la ligne ne porte aucune espèce (zone purement réglementaire).
+    #: La chaîne « None » serait une valeur affichée, donc une donnée inventée.
+    species: str | None = None
     event_date: str | None = None
     count: float | None = None
     department: str | None = None
@@ -128,7 +130,10 @@ class DatasetOverview(BaseModel):
     )
     capabilities: list[str] = Field(default_factory=list)
     columns: list[str] = Field(default_factory=list)
-    total_rows: int = 0
+    total_rows: int
+    #: Libellé métier d'une ligne (« observations », « enregistrements ») : le
+    #: texte affiché ne doit pas appeler « observation » une zone réglementaire.
+    records_label: str = "observations"
     date_min: str | None = None
     date_max: str | None = None
     species_count: int | None = None
