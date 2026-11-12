@@ -28,7 +28,8 @@ seule, s'auto-corrige, puis l'application produit une visualisation interactive.
   Changer de LLM = modifier `AI_PROVIDER` / `AI_MODEL` dans `.env`
   (Anthropic, OpenAI, Google, Ollama…).
 - 🗄️ **Indépendant du moteur DB** — SQLAlchemy + `DATABASE_URL`
-  (**SQLite** en dev, **Postgres** en prod).
+  (**SQLite** en dev, **PostgreSQL** en prod : DSN normalisé, rôle en lecture
+  seule, `search_path` borné, timeouts posés à chaque connexion).
 - 🔒 **Lecture seule** — toute requête de modification (INSERT/UPDATE/DELETE/DDL)
   est rejetée.
 - 🧹 **Cleaning à la lecture** — normalisation générique (trim, valeurs nulles,
@@ -55,9 +56,10 @@ USERNAME=admin
 PASSWORD=admin
 SECRET_KEY=change_me
 
-# Base de données
+# Base de données — dev SQLite / prod PostgreSQL
 DATABASE_URL=sqlite:///data/sensitive_areas.db      # dev
-# DATABASE_URL=postgresql://user:pwd@host:5432/db   # prod
+# DATABASE_URL=postgresql://lpo_ro:pwd@db.interne:5432/lpo   # prod
+# DB_SCHEMA=lpo                 # schéma métier (search_path)
 DB_READ_ONLY=true
 
 # IA (changement de provider ici)
@@ -191,11 +193,16 @@ API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
 | `LPO_SENSITIVE_SPECIES` | liste des espèces sensibles, séparées par des virgules |
 | `LPO_SENSITIVE_SPECIES_FILE` | même liste dans un fichier (un libellé par ligne, `#` = commentaire) |
 | `LPO_WEB_TOKEN` | jeton bearer exigé par l'API (laisser vide = API ouverte, mode démo) |
+| `DB_SCHEMA` | schéma PostgreSQL exposé (`search_path` borné ; sans effet sur SQLite) |
+| `DB_APPLICATION_NAME` | nom lisible dans `pg_stat_activity` (défaut `lpo-data-ai`) |
+| `DB_STATEMENT_TIMEOUT_MS` | coupure serveur des requêtes lentes (défaut 15 000) |
+| `DB_LOCK_TIMEOUT_MS` | attente maximale d'un verrou (défaut 3 000) |
+| `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` | pool PostgreSQL par processus (5 / 5) |
 
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest            # 263 tests
+.venv/bin/python -m pytest            # 298 tests (1 ignoré : intégration PostgreSQL)
 ```
 
 Afficher le prompt système et les exemples few-shot utilisés par l'agent :
@@ -245,6 +252,35 @@ LPO_SENSITIVE_SPECIES="Milan royal,Busard cendré,Aigle royal" \
 Détails (transport HTTP en production, reverse-proxy, volumétrie, journaux) :
 [docs/02-exploitation.md](docs/02-exploitation.md).
 
+## 6 quater. PostgreSQL en production
+
+Le détail (rôle, garde-fous, diagnostic) est dans
+[`docs/02-exploitation.md`](docs/02-exploitation.md) §1. Résumé :
+
+```bash
+DATABASE_URL=postgresql://lpo_ro:motdepasse@db.interne:5432/lpo \
+DB_SCHEMA=lpo \
+DB_STATEMENT_TIMEOUT_MS=15000 \
+  python -m lpo_data_mcp --transport streamable-http --port 8765
+```
+
+- `postgres://` et `postgresql://` sont normalisés vers psycopg 3
+  (`postgresql+psycopg://`), seul pilote déclaré — `src/database/postgres.py`.
+- Chaque connexion applique `statement_timeout`, `lock_timeout`,
+  `idle_in_transaction_session_timeout`, `TIME ZONE 'UTC'` et, en lecture seule,
+  `default_transaction_read_only = on`.
+- Ce dernier réglage est un **garde-fou**, pas une frontière : le rôle
+  PostgreSQL doit n'avoir que `SELECT` (SQL de création du rôle dans la doc).
+- `DB_SCHEMA` borne le `search_path` à `lpo,public` : l'introspection ne voit pas
+  les autres applications du cluster.
+- Les index se créent en `CONCURRENTLY` (table disponible pendant l'indexation),
+  avec détection des index laissés invalides par une interruption.
+
+Les tests unitaires de ce support (`tests/test_postgres_support.py`, 33 tests)
+tournent **sans serveur** ; le test d'intégration s'active avec
+`LPO_TEST_PG_URL=postgresql://…` et vérifie, sur une vraie base, que la session
+refuse l'écriture et que les timeouts sont posés.
+
 ## 7. Exemple bout en bout
 
 ```bash
@@ -275,7 +311,8 @@ régénérer).
 | `docs/00-analyse-depot.md` | Rapport d'analyse (Étape 0) et questions ouvertes |
 | `docs/01-architecture.md` | Architecture, choix techniques, conformité A2UI v1.0 |
 | `docs/02-exploitation.md` | Configuration, déploiement, confidentialité, volumétrie, limites |
-| `scripts/create_indexes.py` | Index recommandés pour une base réelle (idempotent) |
+| `src/database/postgres.py` | Règles PostgreSQL : DSN, `search_path`, garde-fous de session |
+| `scripts/create_indexes.py` | Index recommandés pour une base réelle (idempotent, `CONCURRENTLY` en prod) |
 
 ## 9. Compatibilité
 

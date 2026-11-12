@@ -397,7 +397,7 @@ python -m orchestrator --prompt
 |---|---|---|
 | SQL arbitraire | aucun outil n'accepte de SQL ; `group_by`/`metric` sont des énumérations ; identifiants issus du profil et validés par liste blanche | `lpo_data_mcp/sql.py` |
 | Injection | requêtes **paramétrées** (`run_select_params`), valeurs liées | `sql.py`, `src/database/engine.py` |
-| Écriture | `assert_read_only` (réutilisé du dépôt) + moteur ouvert en lecture | `sql.py` |
+| Écriture | `assert_read_only` (analyse de la requête) + moteur d'exploitation en écriture jamais chargé + `default_transaction_read_only = on` posé à chaque connexion PostgreSQL | `sql.py`, `src/database/postgres.py` |
 | Déni de service | `limit` plafonné à 500, agrégats bornés, pagination explicite | `sql.py` |
 | Fuite de localisation | floutage à la maille ~11 km par défaut pour les espèces sensibles ; repli au département ; mode exact seulement si `LPO_ALLOW_EXACT_COORDINATES=1` | `lpo_data_mcp/privacy.py` |
 | Liste de sensibilité imprécise | liste officielle fournie par `LPO_SENSITIVE_SPECIES` / `…_FILE`, appliquée en SQL (comparaison insensible à la casse, y compris accents), échappée | `privacy.py`, `service.py` |
@@ -408,6 +408,14 @@ python -m orchestrator --prompt
 
 Le floutage est **annoncé dans l'interface** (composant `Notice`) : l'utilisateur
 sait que les points sont approximatifs, et à quelle maille.
+
+En production (PostgreSQL), la lecture seule est défendue en profondeur, sans
+être confondue avec une frontière de sécurité : analyse de la requête
+(`assert_read_only`), `default_transaction_read_only` sur chaque connexion, et
+surtout un **rôle PostgreSQL restreint à `SELECT`** — le seul niveau qu'un
+détenteur du mot de passe ne peut pas désactiver depuis la session. Les
+`statement_timeout` / `lock_timeout` posés à la connexion bornent, eux, le coût
+d'une requête lente sur une base partagée avec l'ETL.
 
 ---
 

@@ -16,16 +16,33 @@ class DatabaseSettings(BaseSettings):
     Connexion base de données pilotée par DATABASE_URL.
 
     - dev  : sqlite:///data/sensitive_areas.db (défaut)
-    - prod : postgresql://user:pwd@host:5432/dbname
+    - prod : postgresql://user:pwd@host:5432/dbname (ou ``postgres://``, normalisé)
 
     L'application travaille en LECTURE SEULE : seules les requêtes SELECT
-    sont autorisées (la donnée est alimentée par un système externe).
+    sont autorisées (la donnée est alimentée par un système externe). En
+    PostgreSQL, cette contrainte est **doublée côté serveur**
+    (``default_transaction_read_only``), voir ``src/database/postgres.py``.
+
+    Les champs propres à PostgreSQL sont sans effet sur SQLite.
     """
 
     url: str = Field(default=f"sqlite:///{_DEFAULT_SQLITE}", alias="DATABASE_URL")
     read_only: bool = Field(default=True, alias="DB_READ_ONLY")
     statement_timeout_ms: int = Field(default=15000, alias="DB_STATEMENT_TIMEOUT_MS")
+    lock_timeout_ms: int = Field(default=3000, alias="DB_LOCK_TIMEOUT_MS")
+    idle_in_transaction_timeout_ms: int = Field(
+        default=60000, alias="DB_IDLE_TX_TIMEOUT_MS"
+    )
     max_rows: int = Field(default=5000, alias="DB_MAX_ROWS")
+
+    #: Schéma métier (``search_path``) : évite de voir, et d'exposer par
+    #: introspection, les schémas des autres applications du même cluster.
+    #: Nommé ``db_schema`` car Pydantic réserve déjà ``schema``.
+    db_schema: str = Field(default="", alias="DB_SCHEMA")
+    application_name: str = Field(default="lpo-data-ai", alias="DB_APPLICATION_NAME")
+    connect_timeout_s: int = Field(default=10, alias="DB_CONNECT_TIMEOUT_S")
+    pool_size: int = Field(default=5, alias="DB_POOL_SIZE")
+    max_overflow: int = Field(default=5, alias="DB_MAX_OVERFLOW")
 
     model_config = {
         "env_file": ".env",

@@ -23,7 +23,10 @@ dependencies = [
     "langchain>=1.3.11",
     "langchain-anthropic>=1.4.7",
     "langchain-openai>=1.3.3",
-    "psycopg2-binary>=2.9.12",
+    # Production : PostgreSQL via psycopg 3 (PILOTE, pas le psycopg2 hérité).
+    # `postgres://` et `postgresql://` sont normalisés vers ce pilote dans
+    # src/database/postgres.py.
+    "psycopg[binary]>=3.2.0",
     # Agent / interface A2UI (lot 3-5)
     "mcp>=2.3.0",
     "a2ui-core>=0.6.0",

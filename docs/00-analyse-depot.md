@@ -167,17 +167,21 @@ dans [02-exploitation.md](02-exploitation.md).
 
 | # | Question | Décision par défaut | Comment la changer | État |
 | --- | --- | --- | --- | --- |
-| 1 | Où sont les observations réelles (schéma, SGBD, volumétrie) ? | Base de démonstration `data/lpo_demo.db`, annoncée comme telle | `DATABASE_URL` + profil dans `profiles.py` | **ouvert** (donnée manquante) |
+| 1 | Où sont les observations réelles (schéma, volumétrie) ? | **PostgreSQL en production** (répondu) ; base de démonstration SQLite en local, annoncée comme telle | `DATABASE_URL`, `DB_SCHEMA` + profil dans `profiles.py` | **traité côté moteur**, schéma et nom de table réels à fournir |
 | 2 | Référentiel taxonomique (TaxRef ?) | Libellés `species` / `latin_name`, vocabulaire servi par `list_species` | colonnes du profil | **ouvert** |
 | 3 | Quel renderer A2UI cible ? | Renderer JS autonome `web/static/renderer.js`, 14 composants | remplacer le renderer, messages inchangés | **ouvert** (choix client) |
 | 4 | Transport MCP en production | `stdio` par défaut ; `streamable-http` testé et documenté | `LPO_MCP_URL` / `LPO_MCP_COMMAND` | **traité** (les deux modes testés) |
 | 5 | Format d'inférence A2UI | JSON canonique validé contre le catalogue | — | **tranché** |
 | 6 | Clé / provider LLM | Heuristique déterministe ; chemin LLM implémenté et testé avec un faux modèle | `LPO_LLM_INTENT=auto` + `.env` | **prêt**, clé manquante |
 | 7 | Liste officielle des espèces sensibles | Liste fournie par configuration, sinon colonne `sensitive` + statut de protection | `LPO_SENSITIVE_SPECIES` / `LPO_SENSITIVE_SPECIES_FILE` | **traité** (configurable) |
-| 8 | Volumétrie cible | Plafond 500 lignes/outil, agrégats en base, index recommandés | `scripts/create_indexes.py`, vues matérialisées ensuite | **traité** (outillage fourni) |
+| 8 | Volumétrie cible | Plafond 500 lignes/outil, agrégats en base, index `CONCURRENTLY` en production, `statement_timeout` et pool bornés | `scripts/create_indexes.py`, `DB_STATEMENT_TIMEOUT_MS`, `DB_POOL_SIZE` | **traité** (outillage fourni) |
 | 9 | Authentification / multi-utilisateur | Jeton unique optionnel `LPO_WEB_TOKEN` ; conversations opaques | variable d'environnement | **partiel** (mono-jeton) |
 | 10 | Accessibilité | `@accessibility` **refusé** par la spec v1.0 ; rôles ARIA dans le renderer + résumé texte | — | **tranché par le protocole** |
 
-Ce qui reste réellement bloquant pour une mise en production : la **donnée
-source** (#1) et le **référentiel taxonomique** (#2). Tout le reste est soit
-tranché, soit paramétrable.
+La **source de données** est désormais connue : PostgreSQL en production,
+SQLite en développement. Le code est prêt (DSN normalisé, `search_path` borné,
+garde-fous de session, rôle en lecture seule documenté, index `CONCURRENTLY`) ;
+il reste à fournir le DSN, le schéma, le nom réel de la table d'observations et
+la version du serveur. Ce qui demeure bloquant pour la mise en service :
+la **connexion à la base réelle** (#1) et le **référentiel taxonomique** (#2).
+Tout le reste est soit tranché, soit paramétrable.

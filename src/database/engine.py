@@ -17,11 +17,12 @@ from typing import Any
 
 import pandas as pd
 import sqlparse
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 
 from ..config.settings import settings
 from ..core.exceptions import DatabaseException
+from . import postgres
 
 logger = logging.getLogger(__name__)
 
@@ -46,37 +47,112 @@ def get_engine() -> Engine:
     return _engine
 
 
-def _build_engine() -> Engine:
-    url = settings.database.url
+def _build_engine(*, read_only: bool | None = None) -> Engine:
+    """Construit un moteur pour ``DATABASE_URL``.
+
+    ``read_only`` force le mode de session (les scripts d'exploitation, qui
+    créent des index, passent ``False``) ; par défaut on suit la configuration.
+    """
+    db = settings.database
+    url = postgres.normalize_database_url(db.url)
+    effective_read_only = db.read_only if read_only is None else read_only
     connect_args: dict[str, Any] = {}
-    engine_kwargs: dict[str, Any] = {"pool_pre_ping": True, "future": True}
+    engine_kwargs: dict[str, Any] = {
+        "pool_pre_ping": True,
+        "future": True,
+        "pool_timeout": 30,
+    }
 
     if url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
     else:
-        # Postgres : pool raisonnable + timeout serveur appliqué par connexion
-        engine_kwargs.update(pool_size=5, max_overflow=5, pool_recycle=1800)
+        # Tout ce qui n'est pas SQLite est traité comme un serveur distant :
+        # pool borné et recyclage, quel que soit le moteur.
+        engine_kwargs.update(
+            pool_size=db.pool_size,
+            max_overflow=db.max_overflow,
+            pool_recycle=1800,
+        )
+        if postgres.is_postgres_url(url):
+            # Paramètres libpq propres à PostgreSQL (`application_name`,
+            # `search_path`, délai de connexion).
+            connect_args.update(
+                postgres.connect_args(
+                    schema=db.db_schema,
+                    application_name=db.application_name,
+                    connect_timeout_s=db.connect_timeout_s,
+                )
+            )
 
     try:
         engine = create_engine(url, connect_args=connect_args, **engine_kwargs)
-        # Test de connexion immédiat pour échouer tôt et clairement
+    except Exception as e:  # noqa: BLE001
+        raise DatabaseException(_connection_error(e))
+
+    if engine.dialect.name == "postgresql":
+        _install_session_guardrails(engine, read_only=effective_read_only)
+
+    try:
+        # Test de connexion immédiat : on échoue tôt, et le message porte la
+        # cause réelle (rôle absent, mot de passe, TLS) plutôt qu'une erreur
+        # surgie trois couches plus loin.
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        logger.info("Moteur DB initialisé: %s", _safe_url(url))
+        logger.info(
+            "Moteur DB initialisé: %s (lecture seule: %s)",
+            postgres.redact_url(url),
+            effective_read_only,
+        )
         return engine
     except Exception as e:  # noqa: BLE001
-        raise DatabaseException(f"Connexion base de données impossible: {e}")
+        engine.dispose()
+        raise DatabaseException(_connection_error(e))
 
 
-def _safe_url(url: str) -> str:
-    """Masque le mot de passe dans les logs."""
-    if "@" in url and "://" in url:
-        scheme, rest = url.split("://", 1)
-        if "@" in rest:
-            creds, host = rest.split("@", 1)
-            user = creds.split(":", 1)[0]
-            return f"{scheme}://{user}:***@{host}"
-    return url
+def _install_session_guardrails(engine: Engine, *, read_only: bool) -> None:
+    """Applique les ``SET`` de session à chaque connexion PostgreSQL.
+
+    L'exécution passe par le curseur du pilote, avant que SQLAlchemy n'ouvre
+    une transaction : ``default_transaction_read_only`` ne s'applique qu'aux
+    transactions **suivantes**, il doit donc être posé hors transaction.
+    """
+    db = settings.database
+    statements = postgres.session_setup_statements(
+        read_only=read_only,
+        statement_timeout_ms=db.statement_timeout_ms,
+        lock_timeout_ms=db.lock_timeout_ms,
+        idle_in_transaction_timeout_ms=db.idle_in_transaction_timeout_ms,
+    )
+
+    @event.listens_for(engine, "connect")
+    def _apply(dbapi_connection: Any, _record: Any) -> None:  # noqa: ANN401
+        cursor = dbapi_connection.cursor()
+        try:
+            for statement in statements:
+                cursor.execute(statement)
+            dbapi_connection.commit()
+        finally:
+            cursor.close()
+
+
+def _connection_error(error: Exception) -> str:
+    """Message de connexion actionnable, sans divulguer le mot de passe."""
+    message = str(error).strip() or error.__class__.__name__
+    if "psycopg" in message.lower() and "import" in message.lower():
+        return (
+            "Pilote PostgreSQL absent : installez `psycopg[binary]` "
+            f"(pip install -r requirements.txt). Détail : {message}"
+        )
+    return f"Connexion base de données impossible: {message}"
+
+
+def get_admin_engine() -> Engine:
+    """Moteur **en écriture**, non mis en cache : réservé aux scripts d'exploitation.
+
+    Seul ``scripts/create_indexes.py`` l'utilise (DDL). Il n'est jamais importé
+    par le serveur MCP ni par l'interface web, qui restent en lecture seule.
+    """
+    return _build_engine(read_only=False)
 
 
 def reset_engine() -> None:
@@ -196,10 +272,9 @@ def run_select(sql: str, max_rows: int | None = None) -> pd.DataFrame:
 
     try:
         with engine.connect() as conn:
-            if engine.dialect.name == "postgresql":
-                conn.execute(
-                    text(f"SET statement_timeout = {int(settings.database.statement_timeout_ms)}")
-                )
+            # statement_timeout et lecture seule sont posés à l'ouverture de la
+            # connexion (voir `_install_session_guardrails`) : aucune requête ne
+            # peut les oublier, y compris celles exécutées hors de ce module.
             df = pd.read_sql_query(text(sql), conn)
     except DatabaseException:
         raise
@@ -230,10 +305,6 @@ def run_select_params(
 
     try:
         with engine.connect() as conn:
-            if engine.dialect.name == "postgresql":
-                conn.execute(
-                    text(f"SET statement_timeout = {int(settings.database.statement_timeout_ms)}")
-                )
             df = pd.read_sql_query(text(sql), conn, params=dict(params or {}))
     except DatabaseException:
         raise
