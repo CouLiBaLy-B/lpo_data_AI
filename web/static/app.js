@@ -21,8 +21,35 @@ const input = document.getElementById("question");
 const sendButton = document.getElementById("send");
 const textOnlyButton = document.getElementById("text-only");
 const protocolBadge = document.getElementById("protocol-badge");
+const mcpBadge = document.getElementById("mcp-badge");
+const llmBadge = document.getElementById("llm-badge");
 const demoBadge = document.getElementById("demo-badge");
 const tokenBadge = document.getElementById("token-badge");
+
+// Configuration : panneau modal (modèle + serveur MCP).
+const settingsOpenButton = document.getElementById("settings-open");
+const settingsOverlay = document.getElementById("settings-overlay");
+const settingsClose = document.getElementById("settings-close");
+const settingsForm = document.getElementById("settings-form");
+const settingsStatus = document.getElementById("settings-status");
+const settingsSummaryMcp = document.getElementById("settings-summary-mcp");
+const settingsSummaryDataset = document.getElementById("settings-summary-dataset");
+const settingsSummaryLlm = document.getElementById("settings-summary-llm");
+const settingsMode = document.getElementById("settings-llm-mode");
+const settingsProvider = document.getElementById("settings-provider");
+const settingsModel = document.getElementById("settings-model");
+const settingsApiKey = document.getElementById("settings-api-key");
+const settingsKeyHint = document.getElementById("settings-key-hint");
+const settingsTransport = document.getElementById("settings-mcp-transport");
+const settingsHttpFields = document.getElementById("settings-http-fields");
+const settingsStdioFields = document.getElementById("settings-stdio-fields");
+const settingsUrl = document.getElementById("settings-mcp-url");
+const settingsCommand = document.getElementById("settings-mcp-command");
+const settingsArgs = document.getElementById("settings-mcp-args");
+const settingsSave = document.getElementById("settings-save");
+const settingsTestButton = document.getElementById("settings-test");
+const settingsResetButton = document.getElementById("settings-reset");
+const welcomeMarkup = document.getElementById("surface-welcome")?.outerHTML || "";
 
 // Une conversation = une surface : on repart d'une conversation neuve à chaque
 // chargement de page, sinon l'agent mettrait à jour des surfaces que ce renderer
@@ -200,11 +227,11 @@ function applyTurn(turn, { echo = false } = {}) {
 
 // ── Appels réseau ──────────────────────────────────────────────────────────
 
-async function api(path, body) {
+async function api(path, body, { method = "POST" } = {}) {
   const response = await fetch(path, {
-    method: "POST",
+    method,
     headers: authHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify(body),
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!response.ok) {
     let detail = response.statusText;
@@ -277,6 +304,277 @@ async function handleAction(action) {
   }
 }
 
+// ── Configuration (modèle + serveur MCP) ──────────────────────────────────
+
+let settingsSnapshot = null;
+
+function setSettingsStatus(text, tone = "info") {
+  settingsStatus.textContent = text;
+  settingsStatus.dataset.tone = tone;
+}
+
+function openSettings() {
+  settingsOverlay.hidden = false;
+  settingsOpenButton.setAttribute("aria-expanded", "true");
+  loadSettings();
+  settingsClose.focus();
+}
+
+function closeSettings() {
+  settingsOverlay.hidden = true;
+  settingsOpenButton.setAttribute("aria-expanded", "false");
+  settingsOpenButton.focus();
+}
+
+function providerLabel(provider) {
+  return provider.ready ? provider.label : `${provider.label} — clé absente`;
+}
+
+function fillProviders(providers, selected) {
+  settingsProvider.replaceChildren();
+  for (const provider of providers || []) {
+    const option = el("option", "", providerLabel(provider));
+    option.value = provider.id;
+    if (provider.id === selected) option.selected = true;
+    settingsProvider.append(option);
+  }
+}
+
+function syncMcpFields() {
+  const http = settingsTransport.value === "http";
+  settingsHttpFields.hidden = !http;
+  settingsStdioFields.hidden = http;
+  settingsUrl.disabled = !http;
+  settingsCommand.disabled = http;
+  settingsArgs.disabled = http;
+}
+
+function datasetSummary(dataset) {
+  if (!dataset || !dataset.profile) return "jeu de données inconnu";
+  const records = dataset.recordsLabel || "enregistrements";
+  const name = dataset.label || dataset.profile;
+  const rows = typeof dataset.totalRows === "number" ? ` · ${dataset.totalRows} ${records}` : "";
+  const kind = dataset.isDemo ? "démonstration" : "réelles";
+  return `${name} (${dataset.profile}) · données ${kind}${rows}`;
+}
+
+function applySettings(settings) {
+  settingsSnapshot = settings;
+  settingsMode.value = settings.llm.mode;
+  fillProviders(settings.llm.providers, settings.llm.provider);
+  settingsModel.value = settings.llm.model || "";
+  settingsApiKey.value = "";
+  settingsKeyHint.textContent = settings.llm.keyEnv
+    ? `${settings.llm.keyEnv} : ${
+        settings.llm.apiKeySet ? "clé disponible" : "aucune clé"
+      } — la clé saisie reste sur le serveur et n'est jamais renvoyée.`
+    : "Fournisseur local : aucune clé requise.";
+
+  const mcp = settings.mcp;
+  settingsTransport.value = mcp.transport;
+  settingsUrl.value = mcp.url || "";
+  settingsCommand.value = mcp.command || "";
+  settingsArgs.value = (mcp.args || []).join("\n");
+  syncMcpFields();
+
+  const status = mcp.status;
+  if (status && status.ok === false) {
+    settingsSummaryMcp.textContent = `${mcp.target} — injoignable : ${status.error || "erreur"}`;
+  } else {
+    const tools = status && Array.isArray(status.tools) ? status.tools.length : null;
+    settingsSummaryMcp.textContent = `${mcp.target} (${mcp.transport})${
+      tools === null ? "" : ` · ${tools} outil${tools > 1 ? "s" : ""}`
+    }`;
+  }
+  const llmLabel =
+    settings.llm.mode === "off"
+      ? "heuristique déterministe (mode off)"
+      : `${settings.llm.provider}/${settings.llm.model || "modèle non renseigné"} (${
+          settings.llm.apiKeySet ? "clé disponible" : "clé absente"
+        })`;
+  settingsSummaryLlm.textContent = llmLabel;
+  if (!settings.editable) {
+    settingsSave.disabled = true;
+    settingsTestButton.disabled = true;
+    settingsResetButton.disabled = true;
+    setSettingsStatus(
+      "Configuration figée par l'environnement (LPO_WEB_SETTINGS=off) : lecture seule.",
+      "warning",
+    );
+  }
+}
+
+async function loadSettings() {
+  try {
+    const settings = await api("/api/settings", undefined, { method: "GET" });
+    applySettings(settings);
+  } catch (error) {
+    setSettingsStatus(`Réglages indisponibles : ${error.message}`, "error");
+  }
+  try {
+    const overview = await api("/api/dataset", undefined, { method: "GET" });
+    settingsSummaryDataset.textContent = datasetSummary({
+      label: overview.dataset_label,
+      profile: overview.profile,
+      totalRows: overview.total_rows,
+      recordsLabel: overview.records_label,
+      isDemo: overview.is_demo,
+    });
+  } catch (error) {
+    settingsSummaryDataset.textContent = `indisponible : ${error.message}`;
+  }
+}
+
+function patchFromForm() {
+  const patch = {
+    llm: {
+      mode: settingsMode.value,
+      provider: settingsProvider.value,
+      model: settingsModel.value.trim(),
+    },
+    mcp: { transport: settingsTransport.value },
+  };
+  const key = settingsApiKey.value.trim();
+  if (key) patch.llm.apiKey = key;
+  if (settingsTransport.value === "http") {
+    patch.mcp.url = settingsUrl.value.trim();
+  } else {
+    patch.mcp.command = settingsCommand.value.trim();
+    patch.mcp.args = settingsArgs.value
+      .split("\n")
+      .map((argument) => argument.trim())
+      .filter(Boolean);
+  }
+  return patch;
+}
+
+function resetConversation() {
+  conversationId = null;
+  turns = 0;
+  updateCount();
+  renderer.reset();
+  chatLog.replaceChildren();
+  if (welcomeMarkup) surfaceHost.innerHTML = welcomeMarkup;
+  surfaceMeta.textContent = "aucune surface";
+}
+
+async function refreshStatus() {
+  try {
+    const health = await api("/api/health", undefined, { method: "GET" });
+    const mcp = health.mcp || {};
+    mcpBadge.textContent = mcp.ok
+      ? `MCP · ${(mcp.tools || []).length} outils`
+      : "MCP injoignable";
+    mcpBadge.classList.toggle("badge-error", !mcp.ok);
+    mcpBadge.title = [mcp.target, mcp.error].filter(Boolean).join("\n");
+
+    const llm = health.llm || {};
+    llmBadge.hidden = false;
+    if (!llm.enabled || llm.mode === "off") {
+      llmBadge.textContent = "Intention · heuristique";
+    } else if (!llm.ready) {
+      llmBadge.textContent = "Intention · LLM sans clé";
+    } else {
+      llmBadge.textContent = `Intention · ${llm.provider}`;
+    }
+    llmBadge.title = [
+      `Mode : ${llm.mode}`,
+      `Fournisseur : ${llm.provider}`,
+      `Modèle : ${llm.model || "—"}`,
+      `Réglages : ${health.settingsSource === "ui" ? "interface" : "environnement"}`,
+    ].join("\n");
+  } catch (error) {
+    console.warn("état du service indisponible", error);
+  }
+}
+
+async function saveSettings(event) {
+  event.preventDefault();
+  settingsSave.disabled = true;
+  setSettingsStatus("Application des réglages…", "info");
+  try {
+    const result = await api("/api/settings", patchFromForm());
+    applySettings({ ...result.settings, mcp: { ...result.settings.mcp, status: result.mcp } });
+    const parts = [];
+    if (result.restarted.includes("mcp")) {
+      const tools = (result.mcp && result.mcp.tools ? result.mcp.tools.length : 0);
+      parts.push(`serveur MCP connecté (${tools} outil${tools > 1 ? "s" : ""})`);
+      resetConversation();
+    }
+    if (result.restarted.includes("llm")) parts.push("modèle mis à jour");
+    setSettingsStatus(
+      parts.length
+        ? `Enregistré — ${parts.join(", ")}${
+            result.restarted.includes("mcp") ? ". Nouvelle conversation" : ""
+          }.`
+        : "Enregistré — aucun changement effectif.",
+      "ok",
+    );
+    await refreshStatus();
+    await loadDataset();
+  } catch (error) {
+    setSettingsStatus(`Refusé : ${error.message}`, "error");
+  } finally {
+    settingsSave.disabled = !(settingsSnapshot ? settingsSnapshot.editable : true);
+  }
+}
+
+async function testSettings() {
+  settingsTestButton.disabled = true;
+  setSettingsStatus("Test en cours…", "info");
+  try {
+    const result = await api("/api/settings/test", {
+      target: "mcp",
+      mcp: patchFromForm().mcp,
+    });
+    if (!result.ok) {
+      setSettingsStatus(`Échec : ${result.error}`, "error");
+      return;
+    }
+    const tools = (result.tools || []).length;
+    setSettingsStatus(
+      `Connexion réussie (${result.durationMs} ms) — ${tools} outil${
+        tools > 1 ? "s" : ""
+      } · ${datasetSummary(result.dataset)}`,
+      "ok",
+    );
+  } catch (error) {
+    setSettingsStatus(`Échec : ${error.message}`, "error");
+  } finally {
+    settingsTestButton.disabled = false;
+  }
+}
+
+async function resetSettings() {
+  settingsResetButton.disabled = true;
+  setSettingsStatus("Retour aux valeurs d'environnement…", "info");
+  try {
+    const result = await api("/api/settings", { reset: "env" });
+    applySettings({ ...result.settings, mcp: { ...result.settings.mcp, status: result.mcp } });
+    resetConversation();
+    setSettingsStatus("Valeurs .env réappliquées — conversation réinitialisée.", "ok");
+    await refreshStatus();
+    await loadDataset();
+  } catch (error) {
+    setSettingsStatus(`Retour impossible : ${error.message}`, "error");
+  } finally {
+    settingsResetButton.disabled = false;
+  }
+}
+
+settingsOpenButton.addEventListener("click", openSettings);
+settingsClose.addEventListener("click", closeSettings);
+settingsOverlay.addEventListener("click", (event) => {
+  if (event.target === settingsOverlay) closeSettings();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !settingsOverlay.hidden) closeSettings();
+});
+settingsTransport.addEventListener("change", syncMcpFields);
+settingsForm.addEventListener("submit", saveSettings);
+settingsTestButton.addEventListener("click", testSettings);
+settingsResetButton.addEventListener("click", resetSettings);
+
 // ── Initialisation ─────────────────────────────────────────────────────────
 
 async function loadCatalog() {
@@ -295,14 +593,16 @@ async function loadCatalog() {
 
 async function loadDataset() {
   try {
-    const overview = await fetch("/api/dataset", { headers: authHeaders() }).then((response) =>
-      response.json(),
-    );
+    const overview = await api("/api/dataset", undefined, { method: "GET" });
     demoBadge.hidden = false;
     demoBadge.textContent = overview.is_demo ? "Démo — données synthétiques" : "Données réelles";
     demoBadge.title = overview.dataset_label || overview.summary || "";
     renderer.loadGeo();
   } catch (error) {
+    demoBadge.hidden = true;
+    mcpBadge.textContent = "MCP injoignable";
+    mcpBadge.classList.add("badge-error");
+    mcpBadge.title = String(error.message || error);
     console.warn("aperçu du jeu de données indisponible", error);
   }
 }
@@ -342,5 +642,7 @@ if (accessToken) tokenBadge.hidden = false;
 
 updateCount();
 loadCatalog();
+refreshStatus();
 loadDataset();
+settingsOverlay.hidden = true;
 if (window.matchMedia("(min-width: 641px)").matches) input.focus();

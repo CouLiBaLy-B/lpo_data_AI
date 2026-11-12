@@ -22,7 +22,7 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 from datetime import date, timedelta
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 from pydantic import BaseModel, Field
 
@@ -521,10 +521,24 @@ def guess_kind(text: str, species: list[str], wants_compare: bool) -> str:
 class IntentParser:
     """Extrait l'intention : LLM si disponible, heuristique sinon."""
 
-    def __init__(self, *, species_vocab: list[str], departments: list[str], regions: list[str]):
+    def __init__(
+        self,
+        *,
+        species_vocab: list[str],
+        departments: list[str],
+        regions: list[str],
+        llm_factory: Callable[[], Any] | None = None,
+        llm_mode: bool | None = None,
+    ):
         self.species_vocab = species_vocab
         self.departments = departments
         self.regions = regions
+        #: Fabrique de modèle injectée par l'orchestrateur (réglages de
+        #: l'interface web). ``None`` = fabrique du dépôt, lue dans `.env`.
+        self.llm_factory = llm_factory
+        #: ``None`` = suivre `LPO_LLM_INTENT` ; ``True``/``False`` = imposé par
+        #: les réglages d'exécution.
+        self.llm_mode = llm_mode
 
     # — heuristique
     def heuristic(self, question: str, *, today: date | None = None) -> Intent:
@@ -573,13 +587,22 @@ class IntentParser:
 
     # — LLM (optionnel)
     def llm(self, question: str, *, today: date | None = None) -> Intent | None:
-        if os.getenv("LPO_LLM_INTENT", "auto").strip().lower() in {"0", "off", "false"}:
+        if self.llm_mode is False:
             return None
-        try:
-            from src.ai.model_factory import create_model
-        except Exception as exc:  # noqa: BLE001 - dépendances IA optionnelles
-            logger.info("Intention LLM indisponible (import): %s", exc)
+        if self.llm_mode is None and os.getenv("LPO_LLM_INTENT", "auto").strip().lower() in {
+            "0",
+            "off",
+            "false",
+        }:
             return None
+        factory = self.llm_factory
+        if factory is None:
+            try:
+                from src.ai.model_factory import create_model
+            except Exception as exc:  # noqa: BLE001 - dépendances IA optionnelles
+                logger.info("Intention LLM indisponible (import): %s", exc)
+                return None
+            factory = lambda: create_model(temperature=0.0)  # noqa: E731
 
         today = today or date.today()
         prompt = (
@@ -593,7 +616,7 @@ class IntentParser:
             "Ne produis aucun chiffre issu des données : seulement l'intention."
         )
         try:
-            model = create_model(temperature=0.0)
+            model = factory()
             structured = model.with_structured_output(IntentModel)
             result = structured.invoke([("system", prompt), ("human", question)])
             payload = result if isinstance(result, IntentModel) else IntentModel(**result)
@@ -655,11 +678,14 @@ class IntentParser:
         self, question: str, *, today: date | None = None, use_llm: bool | None = None
     ) -> Intent:
         if use_llm is None:
-            use_llm = os.getenv("LPO_LLM_INTENT", "auto").strip().lower() not in {
-                "0",
-                "off",
-                "false",
-            }
+            if self.llm_mode is not None:
+                use_llm = self.llm_mode
+            else:
+                use_llm = os.getenv("LPO_LLM_INTENT", "auto").strip().lower() not in {
+                    "0",
+                    "off",
+                    "false",
+                }
         if use_llm:
             intent = self.llm(question, today=today)
             if intent is not None:

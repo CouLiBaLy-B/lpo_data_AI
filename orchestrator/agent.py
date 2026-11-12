@@ -27,7 +27,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Any
+from typing import Any, Callable
 
 from lpo_a2ui import templates
 from lpo_a2ui.validation import (
@@ -126,10 +126,14 @@ class LpoAssistant:
         *,
         today: date | None = None,
         use_llm_intent: bool | None = None,
+        llm_factory: Callable[[], Any] | None = None,
     ):
         self.client = client or McpDataClient()
         self.today = today
+        #: ``None`` = suivre `LPO_LLM_INTENT` ; imposé par les réglages d'exécution
+        #: quand l'interface web a configuré le fournisseur de modèle.
         self.use_llm_intent = use_llm_intent
+        self.llm_factory = llm_factory
         self._context: view_builder.ViewContext | None = None
         self._parser: IntentParser | None = None
         self._context_lock = asyncio.Lock()
@@ -158,8 +162,27 @@ class LpoAssistant:
                 species_vocab=labels,
                 departments=[str(d) for d in overview.get("departments") or []],
                 regions=[str(r) for r in overview.get("regions") or []],
+                llm_factory=self.llm_factory,
+                llm_mode=self.use_llm_intent,
             )
             return self._context
+
+    def configure_llm(self, *, use_llm_intent: bool, llm_factory: Callable[[], Any] | None) -> None:
+        """Change le fournisseur de modèle **sans** perdre le contexte MCP.
+
+        Le vocabulaire (espèces, départements, régions) vient des outils : le
+        relire à chaque changement de modèle serait un appel réseau inutile.
+        """
+        self.use_llm_intent = use_llm_intent
+        self.llm_factory = llm_factory
+        if self._parser is not None:
+            self._parser = IntentParser(
+                species_vocab=self._parser.species_vocab,
+                departments=self._parser.departments,
+                regions=self._parser.regions,
+                llm_factory=llm_factory,
+                llm_mode=use_llm_intent,
+            )
 
     @property
     def parser(self) -> IntentParser:

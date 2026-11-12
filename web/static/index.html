@@ -22,18 +22,159 @@
           interface A2UI construite à partir des outils MCP, jamais du texte inventé.
         </p>
       </div>
-      <p class="status">
-        <span class="sr-only">État du service :</span>
-        <span id="protocol-badge">A2UI v1.0</span>
-        <span class="sep" aria-hidden="true">·</span>
-        <span id="mcp-badge">MCP lpo-data</span>
-        <span class="sep" aria-hidden="true">·</span>
-        <!-- Le statut de démonstration est le plus conséquent de l'écran : une
-             teinte d'alerte le distingue des autres pastilles d'état. -->
-        <span class="badge badge-demo" id="demo-badge" hidden>Démo</span>
-        <span class="badge" id="token-badge" hidden>Accès protégé</span>
-      </p>
+      <div class="topbar-actions">
+        <p class="status">
+          <span class="sr-only">État du service :</span>
+          <span id="protocol-badge">A2UI v1.0</span>
+          <span class="sep" aria-hidden="true">·</span>
+          <span id="mcp-badge">MCP lpo-data</span>
+          <span class="sep" aria-hidden="true">·</span>
+          <span class="badge" id="llm-badge" hidden>Intention · heuristique</span>
+          <!-- Le statut de démonstration est le plus conséquent de l'écran : une
+               teinte d'alerte le distingue des autres pastilles d'état. -->
+          <span class="badge badge-demo" id="demo-badge" hidden>Démo</span>
+          <span class="badge" id="token-badge" hidden>Accès protégé</span>
+        </p>
+        <button
+          type="button"
+          class="settings-open"
+          id="settings-open"
+          aria-expanded="false"
+          aria-controls="settings-panel"
+        >
+          Configuration
+        </button>
+      </div>
     </header>
+
+    <!-- Configuration à chaud : fournisseur de modèle et cible MCP. Le panneau
+         ne contient aucun chiffre issu des données ; les valeurs affichées sont
+         celles du serveur (`GET /api/settings`). -->
+    <div class="settings-overlay" id="settings-overlay" hidden>
+      <section
+        class="settings-panel"
+        id="settings-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-title"
+      >
+        <div class="settings-head">
+          <h2 id="settings-title">Configuration</h2>
+          <button type="button" class="settings-close" id="settings-close">Fermer</button>
+        </div>
+        <p class="settings-lead">
+          Réglages appliqués au serveur web en cours d'exécution. Les valeurs par défaut
+          viennent des variables d'environnement ; <code>.env</code> reste la référence pour un
+          déploiement.
+        </p>
+        <p class="settings-status" id="settings-status" role="status" aria-live="polite"></p>
+        <dl class="settings-summary" id="settings-summary">
+          <dt>Serveur MCP</dt>
+          <dd id="settings-summary-mcp">chargement…</dd>
+          <dt>Jeu de données</dt>
+          <dd id="settings-summary-dataset">chargement…</dd>
+          <dt>Intention</dt>
+          <dd id="settings-summary-llm">chargement…</dd>
+        </dl>
+
+        <form class="settings-form" id="settings-form">
+          <fieldset class="settings-group">
+            <legend>Modèle (extraction d'intention)</legend>
+            <p class="settings-note">
+              Le modèle ne voit jamais les données : il choisit seulement le type de vue et les
+              filtres. Les chiffres viennent des outils MCP.
+            </p>
+            <label class="settings-label" for="settings-llm-mode">Mode</label>
+            <select id="settings-llm-mode" name="llm-mode">
+              <option value="auto">Automatique — LLM si une clé est disponible</option>
+              <option value="on">Toujours — LLM, repli heuristique en cas d'échec</option>
+              <option value="off">Jamais — heuristique déterministe</option>
+            </select>
+
+            <label class="settings-label" for="settings-provider">Fournisseur</label>
+            <select id="settings-provider" name="provider"></select>
+
+            <label class="settings-label" for="settings-model">Modèle</label>
+            <input
+              id="settings-model"
+              name="model"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+              maxlength="80"
+              placeholder="identifiant du modèle, ex. claude-sonnet-4-5"
+            />
+
+            <label class="settings-label" for="settings-api-key">Clé API</label>
+            <input
+              id="settings-api-key"
+              name="api-key"
+              type="password"
+              autocomplete="new-password"
+              maxlength="300"
+              placeholder="Laisser vide pour conserver la clé actuelle"
+            />
+            <p class="settings-key" id="settings-key-hint"></p>
+          </fieldset>
+
+          <fieldset class="settings-group">
+            <legend>Serveur MCP</legend>
+            <p class="settings-note">
+              Le transport HTTP vise un serveur déjà lancé ; le transport local exécute une
+              commande sur la machine du serveur web.
+            </p>
+            <label class="settings-label" for="settings-mcp-transport">Transport</label>
+            <select id="settings-mcp-transport" name="transport">
+              <option value="stdio">Commande locale (stdio)</option>
+              <option value="http">HTTP (streamable-http)</option>
+            </select>
+
+            <div id="settings-http-fields">
+              <label class="settings-label" for="settings-mcp-url">URL du serveur</label>
+              <input
+                id="settings-mcp-url"
+                name="mcp-url"
+                type="url"
+                inputmode="url"
+                autocomplete="off"
+                spellcheck="false"
+                maxlength="500"
+                placeholder="http://127.0.0.1:8765/mcp"
+              />
+            </div>
+
+            <div id="settings-stdio-fields">
+              <label class="settings-label" for="settings-mcp-command">Commande</label>
+              <input
+                id="settings-mcp-command"
+                name="mcp-command"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                maxlength="300"
+              />
+              <label class="settings-label" for="settings-mcp-args">Arguments (un par ligne)</label>
+              <textarea id="settings-mcp-args" name="mcp-args" rows="2" spellcheck="false"></textarea>
+            </div>
+          </fieldset>
+
+          <div class="settings-actions">
+            <button type="submit" class="settings-save" id="settings-save">Enregistrer</button>
+            <button type="button" class="settings-test" id="settings-test">
+              Tester la connexion
+            </button>
+            <button type="button" class="settings-reset" id="settings-reset">
+              Revenir aux valeurs .env
+            </button>
+          </div>
+          <p class="settings-note">
+            Sécurité : les clés ne sont jamais renvoyées par le serveur. En production, préférez
+            le transport HTTP et <code>LPO_WEB_SETTINGS=url-only</code> ou <code>off</code>
+            (configuration figée par l'environnement).
+          </p>
+        </form>
+      </section>
+    </div>
 
     <main class="layout">
       <section class="chat" aria-labelledby="chat-title">

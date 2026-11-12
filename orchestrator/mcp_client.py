@@ -27,6 +27,10 @@ logger = logging.getLogger("lpo_mcp.client")
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
+#: Valeur par défaut de `url` : tant qu'elle est utilisée, `LPO_MCP_URL` décide.
+#: `url=None` force au contraire le transport stdio (réglages de l'interface).
+_ENV_URL = object()
+
 
 class McpToolError(RuntimeError):
     """Appel d'outil MCP en erreur (message renvoyé par le serveur)."""
@@ -43,12 +47,15 @@ class McpDataClient:
     def __init__(
         self,
         *,
-        url: str | None = None,
+        url: str | None | object = _ENV_URL,
         command: str | None = None,
         args: list[str] | None = None,
         cwd: Path | str | None = None,
     ):
-        self.url = url or os.getenv("LPO_MCP_URL") or None
+        if url is _ENV_URL:
+            self.url = os.getenv("LPO_MCP_URL") or None
+        else:
+            self.url = (str(url).strip() if url else "") or None
         self.command = command or os.getenv("LPO_MCP_COMMAND") or sys.executable
         self.args = args or ["-m", "lpo_data_mcp"]
         self.cwd = Path(cwd or PROJECT_ROOT)

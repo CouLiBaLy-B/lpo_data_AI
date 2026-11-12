@@ -407,6 +407,44 @@ python -m orchestrator --prompt
 
 ---
 
+### 5.4 Réglages d'exécution : modèle et cible MCP
+
+Les deux dépendances externes de l'agent (le fournisseur de modèle et le serveur
+MCP) sont décrites par `orchestrator/settings.py` — un couple de dataclasses
+immuables, validées et sérialisables :
+
+```
+RuntimeSettings
+├── LlmSettings  : mode (auto|on|off), provider (liste fermée), model, clé (repr=False)
+└── McpSettings  : transport (stdio|http), url, command, args, cwd
+```
+
+- **Deux sources, une seule vérité** : `from_env()` lit `.env` au démarrage ;
+  `POST /api/settings` produit des réglages `source="ui"` pour la durée du
+  processus. `{"reset": "env"}` revient aux valeurs d'environnement — un
+  redémarrage suffit donc toujours à retrouver un état connu.
+- **La cible MCP n'est adoptée que si elle répond** : le client candidat est
+  connecté et interrogé (`get_dataset_overview`) avant de remplacer l'ancien.
+  En cas d'échec, l'ancienne cible reste en place et l'API renvoie 502 avec le
+  message d'erreur expurgé.
+- **Un changement de cible vide les conversations** : leurs surfaces décrivent
+  un autre jeu de données. Un changement de modèle, lui, conserve le contexte
+  MCP (vocabulaire d'espèces, départements) : `LpoAssistant.configure_llm()`
+  reconstruit le parseur sans re-questionner les outils.
+- **Panne au démarrage = mode dégradé, pas crash** : si le MCP ne répond pas,
+  l'application démarre quand même, `/api/health` publie `mcp.ok=false` et
+  l'interface invite à ouvrir *Configuration*. C'est le seul moyen de corriger
+  une cible erronée depuis le navigateur.
+- **Le modèle reste optionnel** : la fabrique de modèle est importée
+  paresseusement. Sans `langchain` ou sans clé, l'extraction d'intention
+  retombe sur l'heuristique — `POST /api/settings/test` le dit explicitement
+  (« dépendances du modèle absentes… ») au lieu d'échouer silencieusement.
+
+Les entêtes utilisées : `GET /api/settings` (état expurgé), `POST /api/settings`
+(patch), `POST /api/settings/test` (sonde sans enregistrement).
+
+---
+
 ## 6. Sécurité et confidentialité
 
 | Risque | Mesure | Emplacement |
@@ -421,6 +459,7 @@ python -m orchestrator --prompt
 | Fuite par agrégation | l'agrégation `grid` supprime lat/lon exactes des résultats | `service.py` |
 | HTML/JS arbitraire | renderer sans `innerHTML`, catalogue fermé, validation avant envoi | `web/static/renderer.js` |
 | Erreurs masquées | `_guarded` convertit toute exception en `ToolError` lisible | `server.py` |
+| Configuration à chaud | `POST /api/settings` exige le même jeton que les données ; clés jamais renvoyées (`apiKeySet` seulement) ; URL http/https sans identifiants ; `LPO_WEB_SETTINGS=url-only` interdit l'exécution de commandes locales, `off` gèle la configuration | `orchestrator/settings.py`, `web/app.py` |
 
 Le floutage est **annoncé dans l'interface** (composant `Notice`) : l'utilisateur
 sait que les points sont approximatifs, et à quelle maille.

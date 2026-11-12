@@ -184,6 +184,19 @@ Puis ouvrir <http://localhost:8080>. C'est un **renderer A2UI** : il reçoit des
 messages JSON validés (`/api/ask`, `/api/action`) et construit le DOM avec des
 API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
 
+Le bouton **Configuration** de l'en-tête permet de changer, sans redémarrage :
+
+- le **fournisseur de modèle** (Anthropic, OpenAI, Gemini, Mistral, Groq, Ollama),
+  le modèle et sa clé (écrite en mémoire seulement, jamais renvoyée), ainsi que
+  le mode d'extraction d'intention (`auto` / `on` / `off`) ;
+- le **serveur MCP** : URL `streamable-http` ou commande locale `stdio`, avec un
+  bouton « Tester la connexion » qui affiche les outils et le jeu de données
+  réellement atteints avant d'enregistrer.
+
+Une cible MCP qui ne répond pas n'est jamais adoptée (les réglages précédents
+sont conservés), et un changement de cible réinitialise la conversation : ses
+surfaces décrivaient l'ancien jeu de données.
+
 | Variable | Effet |
 | --- | --- |
 | `LPO_PROFILE` | `observations` (défaut) ou `sensitive_areas` (base du dépôt) |
@@ -191,6 +204,8 @@ API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
 | `LPO_LLM_INTENT` | `auto` (défaut) / `off` — extraction d'intention par LLM ou heuristique |
 | `LPO_MCP_URL` | URL d'un serveur MCP `streamable-http` existant |
 | `LPO_MCP_COMMAND` | commande du serveur MCP `stdio` (défaut : `python -m lpo_data_mcp`) |
+| `LPO_MCP_ARGS` | arguments de cette commande (défaut : `-m lpo_data_mcp`) |
+| `LPO_WEB_SETTINGS` | `on` (défaut) / `url-only` / `off` — ce que l'interface peut modifier |
 | `LPO_PRIVACY_MODE` | `auto` (défaut) / `exact` / `blurred` / `department` |
 | `LPO_BLUR_DECIMALS` | mailles de floutage : `1` (défaut, ~11 km) à `0` (~111 km) |
 | `LPO_ALLOW_EXACT_COORDINATES` | `1` pour autoriser les coordonnées exactes d'espèces sensibles |
@@ -206,7 +221,7 @@ API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest            # 334 tests (1 ignoré : intégration PostgreSQL)
+.venv/bin/python -m pytest            # 362 tests (1 ignoré : intégration PostgreSQL)
 ```
 
 Afficher le prompt système et les exemples few-shot utilisés par l'agent :

@@ -32,11 +32,15 @@ def client(service_client):
         app.state.client = service_client
         yield
 
-    original = web_app.lifespan
+    original = web_app.app.router.lifespan_context
     web_app.app.router.lifespan_context = fake_lifespan
     with TestClient(web_app.app) as test_client:
         yield test_client
     web_app.app.router.lifespan_context = original
+    # L'application est un objet module : ne pas laisser de configuration d'un
+    # test au suivant (`test_web_settings.py` écrit ces attributs).
+    for attribute in ("settings", "settings_lock", "mcp_status"):
+        web_app.app.state.__dict__.pop(attribute, None)
 
 
 def test_health_lists_mcp_tools(client):
