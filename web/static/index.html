@@ -40,10 +40,13 @@
           <span class="count" id="chat-count">0 tour</span>
         </div>
 
+        <!-- `tabindex="0"` : une zone qui défile doit pouvoir être parcourue au
+             clavier, sinon son contenu est inatteignable sans souris. -->
         <div
           class="chat-scroll"
           id="chat-log"
           role="log"
+          tabindex="0"
           aria-live="polite"
           aria-relevant="additions"
           aria-labelledby="chat-title"
@@ -115,7 +118,10 @@
         </form>
       </section>
 
-      <section class="surface-panel" id="reponse" aria-labelledby="surface-title">
+      <!-- Le repère de navigation est la zone défilante elle-même : deux
+           repères imbriqués portant le même nom se doublonnent pour un lecteur
+           d'écran. -->
+      <div class="surface-panel" id="reponse">
         <div class="surface-head">
           <h2 id="surface-title">Réponse</h2>
           <div class="surface-tools">
@@ -132,7 +138,13 @@
           </div>
         </div>
         <div class="progress" id="progress" role="progressbar" aria-label="Interrogation du serveur de données" hidden></div>
-        <div class="surface-scroll">
+        <div
+          class="surface-scroll"
+          id="surface-scroll"
+          role="region"
+          tabindex="0"
+          aria-labelledby="surface-title"
+        >
           <div id="surface-host" class="surface-host">
             <div class="welcome" id="surface-welcome">
               <h3>Une question, une interface</h3>
@@ -157,7 +169,7 @@
             </div>
           </div>
         </div>
-      </section>
+      </div>
     </main>
 
     <template id="trace-template">

@@ -168,6 +168,14 @@ def test_conversation_is_a_live_region() -> None:
     assert 'aria-live="polite"' in HTML
 
 
+def test_scroll_regions_are_keyboard_reachable() -> None:
+    """Une zone qui défile sans `tabindex` est inatteignable au clavier."""
+    for element_id in ('id="chat-log"', 'id="surface-scroll"'):
+        start = HTML.index(element_id)
+        tag = HTML[HTML.rindex("<div", 0, start) : HTML.index(">", start) + 1]
+        assert 'tabindex="0"' in tag, f"{element_id} n'est pas focusable"
+
+
 def test_busy_and_progress_states_are_exposed() -> None:
     assert 'setAttribute("aria-busy"' in APP_JS
     assert 'role="progressbar"' in HTML

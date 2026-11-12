@@ -140,6 +140,17 @@ Le rendu reste vérifié sans navigateur : `lpo_a2ui/examples/render_snapshot.mj
 rejoue les messages A2UI sur le renderer de production dans jsdom et échoue si
 un composant n'est pas rendu.
 
+L'interface a en outre été auditée avec **axe-core** dans Chromium, sur sept
+états (accueil, tendance, carte, réponse hors périmètre, mode texte seul, en
+1440 px et en 390 px) : **aucune violation**. Deux défauts réels ont été
+corrigés à cette occasion — les zones défilantes n'étaient pas atteignables au
+clavier, et la page entière défilait au lieu de ses panneaux.
+
+Enfin, les graphiques ne sont pas des SVG étirés : `drawLineChart` et `drawMap`
+reçoivent la largeur mesurée du conteneur et redessinent au redimensionnement.
+Un SVG mis à l'échelle du cadre grossit aussi ses libellés d'axes (16 px sur
+grand écran, 5 px sur téléphone) ; le redessin garde une typographie constante.
+
 ### 2.5 Format d'inférence et validation : JSON canonique + validation systématique
 
 Le pipeline décrit par [a2ui.org/concepts/overview](https://a2ui.org/concepts/overview/)

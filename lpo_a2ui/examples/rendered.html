@@ -622,6 +622,12 @@ a {
   }
 }
 
+.surface-scroll:focus-visible,
+.chat-scroll:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
 .surface-scroll {
   flex: 1;
   min-height: 0;
@@ -755,9 +761,13 @@ a {
   padding: var(--space-4) var(--space-5) var(--space-5);
 }
 
+/* Mesure de lecture : au-delà d'environ 80 caractères par ligne, l'œil perd
+ * le début de la ligne suivante. Les graphiques et tableaux, eux, occupent
+ * toute la largeur disponible. */
 .a2ui-text {
   font-size: 14px;
   line-height: 1.55;
+  max-width: 78ch;
 }
 
 .a2ui-text.is-caption {
@@ -804,6 +814,7 @@ a {
 }
 
 .a2ui-placeholder {
+  max-width: 78ch;
   border: 1px dashed var(--line-strong);
   border-radius: var(--radius-sm);
   padding: var(--space-3);
@@ -1112,6 +1123,7 @@ a {
 /* Encarts */
 
 .a2ui-notice {
+  max-width: 78ch;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1227,6 +1239,16 @@ a {
   .tagline,
   .hint {
     display: none;
+  }
+
+  /* Les séparateurs « · » laissés en fin de ligne quand l'en-tête se replie
+   * ressemblent à une ponctuation orpheline. */
+  .status .sep {
+    display: none;
+  }
+
+  .status {
+    gap: var(--space-1) var(--space-2);
   }
 
   .layout {
