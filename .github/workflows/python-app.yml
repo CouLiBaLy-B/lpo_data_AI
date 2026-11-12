@@ -1,43 +1,39 @@
-# Ce workflow installera les dépendances Python, exécutera les tests et le lint avec une seule version de Python
-# Pour plus d'informations, consultez : https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
 name: LPO data AI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
 
 jobs:
-  build:
+  tests:
     runs-on: ubuntu-latest
-    
-    env:
-      USERNAME: ${{secrets.USERNAME}}
-      PASSWORD: ${{secrets.PASSWORD}}
-      HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Use API Key in Script
-      run: |
-        echo "Using API key in script: $HUGGINGFACE_API_KEY"
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest>=8.0.0 pytest-asyncio>=0.24.0 ruff>=0.4.0
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Tests
+        run: python -m pytest -q
+
+  # Les tests couvrent le serveur MCP en stdio et en streamable-http : ils
+  # démarrent de vrais sous-processus, d'où l'absence de base externe à fournir.
+  # Aucune clé LLM n'est nécessaire : l'extraction d'intention est testée avec un
+  # modèle factice.

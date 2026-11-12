@@ -49,6 +49,9 @@ filterwarnings = ["ignore::DeprecationWarning"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# Les notebooks ne sont pas du code exécuté par l'application ; ruff y voit des
+# cellules Magics (`!pip install`) et échoue. Ils sont donc exclus du lint.
+extend-exclude = ["*.ipynb"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

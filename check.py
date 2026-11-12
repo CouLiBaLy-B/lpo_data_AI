@@ -5,6 +5,7 @@ Script de diagnostic pour identifier le problème avec les settings
 
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 
@@ -55,8 +56,8 @@ def test_pydantic_settings():
     print("\n=== TEST PYDANTIC SETTINGS ===")
 
     try:
-        from pydantic_settings import BaseSettings
         from pydantic import Field
+        from pydantic_settings import BaseSettings
 
         # Test 1: Configuration simple sans préfixe
         print("\n1. Test configuration simple:")

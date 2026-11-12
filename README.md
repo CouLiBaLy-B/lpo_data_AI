@@ -204,6 +204,9 @@ Afficher le prompt système et les exemples few-shot utilisés par l'agent :
 python -m orchestrator --prompt
 ```
 
+La CI (`.github/workflows/python-app.yml`) exécute `ruff check .` puis
+`pytest` sur Python 3.11, sans clé LLM ni base externe.
+
 Couverture : garde-fous SQL, confidentialité (floutage), contrat des outils MCP,
 serveur MCP réel en `stdio`, client MCP de production sur transport réel,
 catalogue et gabarits A2UI, compréhension de l'intention, orchestrateur
