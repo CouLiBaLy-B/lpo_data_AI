@@ -19,7 +19,7 @@ les messages A2UI émis, le résumé texte de repli, puis l'effet produit.
 
 | Outil | Arguments | État | Durée | Résumé renvoyé |
 | --- | --- | --- | --- | --- |
-| `aggregate_observations` | `{"end_date": "2026-11-12", "group_by": "year", "limit": 120, "metric": "observations", "species": ["Milan royal"], "start_date": "2017-01-01"}` | ok | 13 ms | 769 observations au total, par an (10 point(s)). Maximum : 2026 (94). |
+| `aggregate_observations` | `{"end_date": "2026-11-12", "group_by": "year", "limit": 120, "metric": "observations", "species": ["Milan royal"], "start_date": "2017-01-01"}` | ok | < 100 ms | 769 observations au total, par an (10 point(s)). Maximum : 2026 (94). |
 
 ### 2. Messages A2UI (`agent → renderer`)
 
@@ -200,7 +200,7 @@ les messages A2UI émis, le résumé texte de repli, puis l'effet produit.
       },
       "species": {},
       "footer": {
-        "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+        "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
       }
     }
   }
@@ -227,7 +227,7 @@ Milan royal : 769 observations au total (2017–2026, France entière). Maximum 
 
 | Outil | Arguments | État | Durée | Résumé renvoyé |
 | --- | --- | --- | --- | --- |
-| `aggregate_observations` | `{"department": "Finistère", "end_date": "2025-12-31", "group_by": "species", "limit": 10, "metric": "observations", "start_date": "2025-01-01"}` | ok | 7 ms | 94 observations au total, par espèce (10 point(s)). Maximum : Milan royal (10). |
+| `aggregate_observations` | `{"department": "Finistère", "end_date": "2025-12-31", "group_by": "species", "limit": 10, "metric": "observations", "start_date": "2025-01-01"}` | ok | < 100 ms | 94 observations au total, par espèce (10 point(s)). Maximum : Milan royal (10). |
 
 ### 2. Messages A2UI (`agent → renderer`)
 
@@ -423,7 +423,7 @@ Milan royal : 769 observations au total (2017–2026, France entière). Maximum 
       },
       "species": {},
       "footer": {
-        "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+        "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
       }
     }
   }
@@ -450,7 +450,7 @@ Sur la zone « Finistère » (année 2025), Milan royal arrive en tête avec 10 
 
 | Outil | Arguments | État | Durée | Résumé renvoyé |
 | --- | --- | --- | --- | --- |
-| `aggregate_observations` | `{"department": "Gironde", "end_date": "2025-12-31", "group_by": "species", "limit": 10, "metric": "observations", "start_date": "2025-01-01"}` | ok | 6 ms | 108 observations au total, par espèce (10 point(s)). Maximum : Buse variable (17). |
+| `aggregate_observations` | `{"department": "Gironde", "end_date": "2025-12-31", "group_by": "species", "limit": 10, "metric": "observations", "start_date": "2025-01-01"}` | ok | < 100 ms | 108 observations au total, par espèce (10 point(s)). Maximum : Buse variable (17). |
 
 ### 2. Messages A2UI (`agent → renderer`)
 
@@ -604,7 +604,7 @@ Sur la zone « Finistère » (année 2025), Milan royal arrive en tête avec 10 
   "updateDataModel": {
     "surfaceId": "lpo-exemple-bout-en-bout-2",
     "path": "/footer/source",
-    "value": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+    "value": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
   }
 }
 ```
@@ -629,7 +629,7 @@ Filtre appliqué (zone = Gironde). Sur la zone « Gironde » (année 2025), Buse
 
 | Outil | Arguments | État | Durée | Résumé renvoyé |
 | --- | --- | --- | --- | --- |
-| `aggregate_observations` | `{"department": "Gironde", "end_date": "2026-11-12", "group_by": "species", "limit": 10, "metric": "observations", "start_date": "2025-11-12"}` | ok | 6 ms | 147 observations au total, par espèce (10 point(s)). Maximum : Buse variable (26). |
+| `aggregate_observations` | `{"department": "Gironde", "end_date": "2026-11-12", "group_by": "species", "limit": 10, "metric": "observations", "start_date": "2025-11-12"}` | ok | < 100 ms | 147 observations au total, par espèce (10 point(s)). Maximum : Buse variable (26). |
 
 ### 2. Messages A2UI (`agent → renderer`)
 
@@ -783,7 +783,7 @@ Filtre appliqué (zone = Gironde). Sur la zone « Gironde » (année 2025), Buse
   "updateDataModel": {
     "surfaceId": "lpo-exemple-bout-en-bout-2",
     "path": "/footer/source",
-    "value": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+    "value": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
   }
 }
 ```
@@ -808,7 +808,7 @@ Filtre appliqué (période = 12 derniers mois). Sur la zone « Gironde » (12 de
 
 | Outil | Arguments | État | Durée | Résumé renvoyé |
 | --- | --- | --- | --- | --- |
-| `aggregate_observations` | `{"end_date": "2026-06-30", "group_by": "grid", "limit": 200, "metric": "observations", "species": ["Busard cendré"], "start_date": "2026-03-01"}` | ok | 5 ms | 16 observations au total, par maille (16 point(s)). Maximum : 43.5, 3.2 (1). |
+| `aggregate_observations` | `{"end_date": "2026-06-30", "group_by": "grid", "limit": 200, "metric": "observations", "species": ["Busard cendré"], "start_date": "2026-03-01"}` | ok | < 100 ms | 16 observations au total, par maille (16 point(s)). Maximum : 43.5, 3.2 (1). |
 
 ### 2. Messages A2UI (`agent → renderer`)
 
@@ -1028,7 +1028,7 @@ Filtre appliqué (période = 12 derniers mois). Sur la zone « Gironde » (12 de
       },
       "species": {},
       "footer": {
-        "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · confidentialité : blurred · calculé le 2026-11-12T09:58:00+00:00"
+        "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · confidentialité : blurred · calculé le <date de génération>"
       }
     }
   }
@@ -1055,7 +1055,7 @@ Filtre appliqué (période = 12 derniers mois). Sur la zone « Gironde » (12 de
 
 | Outil | Arguments | État | Durée | Résumé renvoyé |
 | --- | --- | --- | --- | --- |
-| `aggregate_observations` | `{"group_by": "species_month", "limit": 500, "metric": "observations", "species": ["Milan royal", "Busard cendré"]}` | ok | 14 ms | 1 351 observations au total, par mois et par espèce (254 point(s)). Maximum : 2017-08 (12). |
+| `aggregate_observations` | `{"group_by": "species_month", "limit": 500, "metric": "observations", "species": ["Milan royal", "Busard cendré"]}` | ok | < 100 ms | 1 351 observations au total, par mois et par espèce (254 point(s)). Maximum : 2017-08 (12). |
 
 ### 2. Messages A2UI (`agent → renderer`)
 
@@ -1253,7 +1253,7 @@ Filtre appliqué (période = 12 derniers mois). Sur la zone « Gironde » (12 de
       },
       "species": {},
       "footer": {
-        "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+        "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
       }
     }
   }
@@ -1280,7 +1280,7 @@ Comparaison toute la période disponible : Milan royal totalise 841 observations
 
 | Outil | Arguments | État | Durée | Résumé renvoyé |
 | --- | --- | --- | --- | --- |
-| `get_species_info` | `{"species": "Héron cendré"}` | ok | 34 ms | Héron cendré : 938 observation(s), 3 048 individu(s), de 2016-01-15 à 2026-10-30, 10 département(s) concerné(s). |
+| `get_species_info` | `{"species": "Héron cendré"}` | ok | < 100 ms | Héron cendré : 938 observation(s), 3 048 individu(s), de 2016-01-15 à 2026-10-30, 10 département(s) concerné(s). |
 
 ### 2. Messages A2UI (`agent → renderer`)
 
@@ -1391,6 +1391,16 @@ Comparaison toute la période disponible : Milan royal totalise 841 observations
           "tone": "warning",
           "title": "Jeu de démonstration",
           "message": "Jeu de démonstration synthétique (observations naturalistes) — aucune valeur écologique réelle. Les chiffres servent à valider la chaîne MCP → A2UI, pas à documenter la biodiversité."
+        },
+        {
+          "tone": "info",
+          "title": "À savoir",
+          "message": "Espèce sensible : les localisations précises ne doivent pas être diffusées."
+        },
+        {
+          "tone": "warning",
+          "title": "Espèce sensible",
+          "message": "La localisation précise n'est pas diffusée ; seules les échelles agrégées sont disponibles."
         }
       ],
       "filters": {
@@ -1456,7 +1466,7 @@ Comparaison toute la période disponible : Milan royal totalise 841 observations
         "note": "Données observées de 2016-01-15 à 2026-10-30. Départements : Gironde, Finistère, Hérault, Loire-Atlantique, Côtes-d'Armor, Bas-Rhin, Charente-Maritime, Indre-et-Loire, Morbihan, Vendée."
       },
       "footer": {
-        "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+        "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
       }
     }
   }

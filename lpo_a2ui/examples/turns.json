@@ -592,7 +592,7 @@
               },
               "species": {},
               "footer": {
-                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
               }
             }
           }
@@ -1220,7 +1220,7 @@
               },
               "species": {},
               "footer": {
-                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
               }
             }
           }
@@ -1445,7 +1445,7 @@
           "updateDataModel": {
             "surfaceId": "lpo-exemple-bout-en-bout-2",
             "path": "/footer/source",
-            "value": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+            "value": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
           }
         }
       ]
@@ -1668,7 +1668,7 @@
           "updateDataModel": {
             "surfaceId": "lpo-exemple-bout-en-bout-2",
             "path": "/footer/source",
-            "value": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+            "value": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
           }
         }
       ]
@@ -2372,7 +2372,7 @@
               },
               "species": {},
               "footer": {
-                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · confidentialité : blurred · calculé le 2026-11-12T09:58:00+00:00"
+                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · confidentialité : blurred · calculé le <date de génération>"
               }
             }
           }
@@ -3914,7 +3914,7 @@
               },
               "species": {},
               "footer": {
-                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
               }
             }
           }
@@ -4296,6 +4296,16 @@
                   "tone": "warning",
                   "title": "Jeu de démonstration",
                   "message": "Jeu de démonstration synthétique (observations naturalistes) — aucune valeur écologique réelle. Les chiffres servent à valider la chaîne MCP → A2UI, pas à documenter la biodiversité."
+                },
+                {
+                  "tone": "info",
+                  "title": "À savoir",
+                  "message": "Espèce sensible : les localisations précises ne doivent pas être diffusées."
+                },
+                {
+                  "tone": "warning",
+                  "title": "Espèce sensible",
+                  "message": "La localisation précise n'est pas diffusée ; seules les échelles agrégées sont disponibles."
                 }
               ],
               "filters": {
@@ -4466,7 +4476,7 @@
                 "note": "Données observées de 2016-01-15 à 2026-10-30. Départements : Gironde, Finistère, Hérault, Loire-Atlantique, Côtes-d'Armor, Bas-Rhin, Charente-Maritime, Indre-et-Loire, Morbihan, Vendée."
               },
               "footer": {
-                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le <date de génération>"
               }
             }
           }

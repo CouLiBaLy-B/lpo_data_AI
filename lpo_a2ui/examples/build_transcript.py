@@ -17,6 +17,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -69,6 +70,36 @@ class ServiceBackedClient:
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
 
+# L'horodatage de calcul et les durées changent à chaque exécution : les figer
+# rend la trace reproductible (une régénération sans changement de données ne
+# produit aucun diff).
+_STAMP = re.compile(r"calculé le [0-9T:+\-]+")
+
+
+def _stable(value: Any) -> Any:
+    if isinstance(value, str):
+        return _STAMP.sub("calculé le <date de génération>", value)
+    return value
+
+
+def _sanitise(value: Any) -> Any:
+    """Applique `_stable` à toute la structure (dicts, listes, chaînes)."""
+    if isinstance(value, dict):
+        return {key: _sanitise(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_sanitise(item) for item in value]
+    return _stable(value)
+
+
+def _duration(ms: int) -> str:
+    """Durée en tranches : stable d'une exécution à l'autre, informative."""
+    if ms < 100:
+        return "< 100 ms"
+    if ms < 1000:
+        return "< 1 s"
+    return "≥ 1 s"
+
+
 def _trim(value: Any, depth: int = 0) -> Any:
     """Tronque les longues listes de données pour garder la trace lisible."""
     if isinstance(value, list):
@@ -78,7 +109,7 @@ def _trim(value: Any, depth: int = 0) -> Any:
         return head
     if isinstance(value, dict):
         return {key: _trim(item, depth + 1) for key, item in value.items()}
-    return value
+    return _stable(value)
 
 
 def _format_trace(trace) -> list[str]:
@@ -90,7 +121,7 @@ def _format_trace(trace) -> list[str]:
         if len(summary) > 120:
             summary = summary[:117] + "…"
         lines.append(
-            f"| `{entry.tool}` | `{args}` | {status} | {entry.duration_ms} ms | {summary} |"
+            f"| `{entry.tool}` | `{args}` | {status} | {_duration(entry.duration_ms)} | {summary} |"
         )
     return lines
 
@@ -217,7 +248,7 @@ def build(out: Path) -> Path:
 
     out.write_text("\n".join(parts), encoding="utf-8")
     JSON_OUT.write_text(
-        json.dumps({"turns": turns}, ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(_sanitise({"turns": turns}), ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return out
 

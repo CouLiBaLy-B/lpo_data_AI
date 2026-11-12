@@ -171,3 +171,22 @@ def test_repo_profile_metric_falls_back_with_warning(repo_service):
     result = repo_service.aggregate_observations(group_by="year", metric="individuals")
     assert result.metric == "observations"
     assert any("Effectifs" in w for w in result.meta.warnings)
+
+
+def test_protected_species_are_sensitive_even_with_an_explicit_column(demo_service):
+    """Le statut de protection suffit : il ne doit pas être masqué par la colonne.
+
+    Le bug corrigé ici : quand le schéma possède une colonne `sensitive`, elle
+    était utilisée **seule** — une espèce protégée mais mal marquée (ou dont la
+    colonne vaut 0) voyait ses coordonnées diffusées en clair.
+    """
+    listing = demo_service.list_species(limit=200)
+    protected = [s for s in listing.species if (s.protection or "").lower().startswith("prot")]
+    assert protected, "la base de démonstration doit contenir des espèces protégées"
+    assert all(s.sensitive for s in protected), "toute espèce protégée est sensible"
+
+    sample = protected[0]
+    page = demo_service.get_observations(species=[sample.label], limit=20)
+    assert page.observations
+    assert all(point.lat is None or round(point.lat, 1) == point.lat for point in page.observations)
+    assert page.meta.privacy == "blurred"
