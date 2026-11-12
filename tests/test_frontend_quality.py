@@ -276,3 +276,12 @@ def test_every_class_in_document_is_styled() -> None:
         classes.update(attribute.split())
     missing = sorted(name for name in classes if f".{name}" not in CSS)
     assert not missing, f"classes sans règle CSS : {missing}"
+
+
+def test_demo_badge_wears_its_warning_tone() -> None:
+    """Toute classe d'état déclarée dans la feuille doit être branchée : une
+    pastille « Démo » neutre laisserait passer des données synthétiques pour des
+    observations réelles."""
+    assert re.search(r'class="badge badge-demo" id="demo-badge"', HTML)
+    assert ".badge-demo" in CSS
+    assert re.search(r"\.badge-demo\s*\{[^}]*background:\s*var\(--warn-soft\)", CSS)
