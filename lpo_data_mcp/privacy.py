@@ -11,6 +11,22 @@ reçoit donc que des coordonnées déjà dégradées) :
 protégées, ``exact`` aux autres. Le mode ``exact`` peut être interdit par
 configuration (``LPO_ALLOW_EXACT_COORDINATES=false``) pour un déploiement
 public.
+
+Liste des espèces sensibles
+---------------------------
+
+Le schéma exposé peut ne pas porter d'indicateur de sensibilité fiable (le
+dépôt réel ne l'a pas). Deux variables permettent alors de fournir la liste
+officielle **sans toucher au code** :
+
+- ``LPO_SENSITIVE_SPECIES`` : libellés séparés par des virgules ;
+- ``LPO_SENSITIVE_SPECIES_FILE`` : fichier texte, un libellé par ligne
+  (les lignes vides et commençant par ``#`` sont ignorées).
+
+Ces libellés sont comparés, insensiblement à la casse, au libellé d'espèce de
+chaque ligne : une espèce listée est traitée comme sensible même si la colonne
+``sensitive`` vaut 0. La liste est lue à chaque appel (pas de cache), ce qui
+permet de la changer sans redémarrer le serveur.
 """
 
 from __future__ import annotations
@@ -33,6 +49,66 @@ def blur_decimals() -> int:
     except ValueError:
         return _DEFAULT_DECIMALS
     return max(0, min(4, value))
+
+
+def _clean_labels(values: list[str]) -> tuple[str, ...]:
+    """Normalise une liste de libellés (déduplication, ordre conservé)."""
+    seen: dict[str, None] = {}
+    for value in values:
+        label = " ".join(str(value).split()).strip()
+        if not label or label.startswith("#"):
+            continue
+        seen.setdefault(label[:120], None)
+    return tuple(seen)
+
+
+def _labels_from_file(path: str) -> list[str]:
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return [line.strip() for line in handle]
+    except OSError:
+        return []
+
+
+def configured_sensitive_species() -> tuple[str, ...]:
+    """Liste de sensibilité fournie par la configuration (vide par défaut)."""
+    labels: list[str] = []
+    raw = os.getenv("LPO_SENSITIVE_SPECIES", "")
+    if raw:
+        labels.extend(raw.split(","))
+    path = os.getenv("LPO_SENSITIVE_SPECIES_FILE", "").strip()
+    if path:
+        labels.extend(_labels_from_file(path))
+    return _clean_labels(labels)
+
+
+def _sql_literal(label: str) -> str:
+    """Littéral SQL échappé (une apostrophe ne doit rien casser ni injecter)."""
+    return "'" + label.replace("'", "''") + "'"
+
+
+def sensitive_species_sql_list() -> str:
+    """Liste SQL échappée des libellés configurés (chaîne vide si aucun)."""
+    return ", ".join(_sql_literal(label) for label in configured_sensitive_species())
+
+
+def sensitive_species_sql_clause(column: str) -> str | None:
+    """Clause SQL « l'espèce de cette ligne est-elle dans la liste ? ».
+
+    `column` doit déjà être un identifiant validé (échappé par l'appelant).
+
+    La comparaison est faite deux fois — sur la valeur brute et sur sa version
+    minuscule — parce que `LOWER()` de SQLite ne traite que l'ASCII : sans cela,
+    « Épervier d'Europe » ne serait pas reconnu à cause du « É ».
+    """
+    labels = configured_sensitive_species()
+    if not labels:
+        return None
+    raw = ", ".join(_sql_literal(label) for label in labels)
+    lowered = ", ".join(_sql_literal(label.lower()) for label in labels)
+    return (
+        f"(LOWER(TRIM({column})) IN ({lowered}) OR TRIM({column}) IN ({raw}))"
+    )
 
 
 def allow_exact_coordinates() -> bool:

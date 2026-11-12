@@ -356,6 +356,8 @@ python -m orchestrator --prompt
 | Écriture | `assert_read_only` (réutilisé du dépôt) + moteur ouvert en lecture | `sql.py` |
 | Déni de service | `limit` plafonné à 500, agrégats bornés, pagination explicite | `sql.py` |
 | Fuite de localisation | floutage à la maille ~11 km par défaut pour les espèces sensibles ; repli au département ; mode exact seulement si `LPO_ALLOW_EXACT_COORDINATES=1` | `lpo_data_mcp/privacy.py` |
+| Liste de sensibilité imprécise | liste officielle fournie par `LPO_SENSITIVE_SPECIES` / `…_FILE`, appliquée en SQL (comparaison insensible à la casse, y compris accents), échappée | `privacy.py`, `service.py` |
+| API exposée sans contrôle | jeton bearer optionnel `LPO_WEB_TOKEN` sur tous les accès aux données ; `/api/health` et `/api/catalog` restent publics | `web/app.py` |
 | Fuite par agrégation | l'agrégation `grid` supprime lat/lon exactes des résultats | `service.py` |
 | HTML/JS arbitraire | renderer sans `innerHTML`, catalogue fermé, validation avant envoi | `web/static/renderer.js` |
 | Erreurs masquées | `_guarded` convertit toute exception en `ToolError` lisible | `server.py` |

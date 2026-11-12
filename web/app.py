@@ -22,11 +22,12 @@ from __future__ import annotations
 
 import logging
 import os
+import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -39,6 +40,28 @@ logger = logging.getLogger("lpo.web")
 
 STATIC_DIR = Path(__file__).parent / "static"
 MAX_CONVERSATIONS = 200
+
+
+def require_token(request: Request) -> None:
+    """Jeton bearer optionnel (`LPO_WEB_TOKEN`).
+
+    Sans variable d'environnement, l'API reste ouverte (démo locale). Dès qu'un
+    jeton est configuré, tous les points d'entrée qui touchent aux données
+    l'exigent : une instance exposée sur Internet ne peut pas être interrogée
+    par n'importe qui. `/api/health` et `/api/catalog` restent publics (aucune
+    donnée, utile aux sondes de disponibilité).
+    """
+    expected = os.getenv("LPO_WEB_TOKEN", "").strip()
+    if not expected:
+        return
+    header = request.headers.get("authorization", "")
+    scheme, _, token = header.partition(" ")
+    if scheme.lower() != "bearer" or not secrets.compare_digest(token.strip(), expected):
+        raise HTTPException(
+            status_code=401,
+            detail="Jeton d'accès requis (en-tête Authorization: Bearer …).",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 @asynccontextmanager
@@ -123,14 +146,14 @@ def catalog() -> dict[str, Any]:
     }
 
 
-@app.get("/api/dataset")
+@app.get("/api/dataset", dependencies=[Depends(require_token)])
 async def dataset() -> dict[str, Any]:
     assistant: LpoAssistant = app.state.assistant
     ctx = await assistant.ensure_context()
     return ctx.overview
 
 
-@app.post("/api/ask")
+@app.post("/api/ask", dependencies=[Depends(require_token)])
 async def ask(payload: AskRequest) -> JSONResponse:
     assistant: LpoAssistant = app.state.assistant
     conversation = _conversation(payload.conversationId)
@@ -145,7 +168,7 @@ async def ask(payload: AskRequest) -> JSONResponse:
     return JSONResponse(body)
 
 
-@app.post("/api/action")
+@app.post("/api/action", dependencies=[Depends(require_token)])
 async def action(payload: ActionRequest) -> JSONResponse:
     assistant: LpoAssistant = app.state.assistant
     conversation = _conversation(payload.conversationId)
@@ -160,7 +183,7 @@ async def action(payload: ActionRequest) -> JSONResponse:
     return JSONResponse(body)
 
 
-@app.post("/api/reset")
+@app.post("/api/reset", dependencies=[Depends(require_token)])
 def reset(payload: dict[str, Any] | None = None) -> dict[str, str]:
     conversation_id = (payload or {}).get("conversationId")
     if conversation_id:

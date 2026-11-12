@@ -135,7 +135,7 @@ Ce qui n'a **pas** été réutilisé, volontairement :
 | 3 | Aucun agent « question → outils → UI » | **Lot 5** : `orchestrator/` (intention, client MCP, vues, agent) |
 | 4 | Données : pas de table d'observations | Profils de schéma (`lpo_data_mcp/profiles.py`) : `observations` (démo) et `sensitive_areas` (base réelle) ; l'interface dégrade explicitement quand une capacité manque |
 | 5 | Aucune protection des espèces sensibles | `lpo_data_mcp/privacy.py` : floutage à la maille ~11 km, ou repli au département, ou exact sur autorisation explicite |
-| 6 | Aucun test | **170 tests** `pytest` (privacy, SQL, service, serveur MCP réel en stdio, client MCP de production, catalogue A2UI, intention, orchestrateur, prompt système et few-shots A2UI, API web, chaîne complète HTTP → MCP → SQLite) |
+| 6 | Aucun test | **201 tests** `pytest` (privacy, SQL, service, serveur MCP réel en stdio, client MCP de production, catalogue A2UI, intention, orchestrateur, prompt système et few-shots A2UI, chemin LLM de l'intention, sensibilité configurée, transport HTTP réel, jeton d'accès, index, API web, chaîne complète HTTP → MCP → SQLite) |
 | 7 | Aucune trace des appels d'outils | `TraceEntry` exposée par l'agent (`trace` dans chaque réponse HTTP) |
 | 8 | Le front Streamlit n'est pas un renderer A2UI | Nouvelle application web FastAPI + client A2UI (`web/`) ; Streamlit conservé |
 
@@ -158,40 +158,26 @@ plutôt qu'une carte inventée. Ce comportement est testé
 
 ---
 
-## 6. Questions ouvertes
+## 6. Questions ouvertes et décisions par défaut
 
-Ces points **ne peuvent pas être tranchés depuis le dépôt** et nécessitent une
-réponse du commanditaire ; chacun a une valeur par défaut explicite en attendant.
+Ces points **ne peuvent pas être tranchés depuis le dépôt**. Pour chacun, une
+décision par défaut a été prise afin de ne pas bloquer la livraison, et le
+moyen de la changer **sans code** est indiqué. Le détail d'exploitation est
+dans [02-exploitation.md](02-exploitation.md).
 
-1. **Source réelle des observations** — où se trouve la table d'observations
-   (schéma, volumétrie, colonnes, SGBD) ? *Défaut : base de démonstration
-   `data/lpo_demo.db`, annoncée comme telle dans l'interface.*
-2. **Référentiel taxonomique** — libellés officiels (TaxRef ? nom vernaculaire
-   vs scientifique ? code espèce ?). *Défaut : `species` + `latin_name` en clair,
-   vocabulaire servi par `list_species`.*
-3. **Renderer A2UI cible** — Streamlit n'en est pas un. Faut-il une application
-   React/Lit existante, une application mobile (Flutter/SwiftUI), ou le client
-   de démonstration livré ici ? *Défaut : client web autonome
-   `web/static/renderer.js` (JavaScript, sans dépendance) qui implémente le
-   catalogue LPO.*
-4. **Transport MCP en production** — stdio (agent local) ou streamable-http
-   (service réseau) ? Authentification ? *Défaut : stdio, HTTP disponible par
-   option `--transport`.*
-5. **Format d'inférence A2UI** — JSON canonique validé côté agent (choix retenu)
-   ou format compact « Express » encadré par `<a2ui>` ? *Défaut : JSON canonique,
-   validé contre le catalogue avant émission.*
-6. **Clé LLM** — aucune clé n'est fournie. L'extraction d'intention fonctionne
-   donc en **heuristique déterministe** (`LPO_LLM_INTENT=off`) ; le chemin LLM
-   est implémenté et testé « à blanc ». Quel provider/clé utiliser ?
-7. **Politique de sensibilité** — quelles espèces considérer comme sensibles ?
-   Le dépôt fournit un indicateur par ligne ; la liste officielle n'y est pas.
-   *Défaut : colonne `sensitive` + `protection_status`, floutage ~11 km.*
-8. **Volumétrie cible et pagination** — au-delà de quelques millions de lignes,
-   l'agrégation SQL devra être complétée par des vues matérialisées. *Défaut :
-   plafond de 500 lignes par outil, agrégats côté base.*
-9. **Authentification / multi-tenant** — aucune notion d'utilisateur dans le
-   nouveau flux. *Défaut : mono-utilisateur, conversations identifiées par un
-   `conversationId` opaque.*
-10. **Accessibilité** — le protocole v1.0 **refuse** l'extension `@accessibility`
-    (vérifié : le SDK lève `A2uiCatalogError`). L'accessibilité repose donc sur
-    le thème natif du renderer et sur le **résumé texte de repli** systématique.
+| # | Question | Décision par défaut | Comment la changer | État |
+| --- | --- | --- | --- | --- |
+| 1 | Où sont les observations réelles (schéma, SGBD, volumétrie) ? | Base de démonstration `data/lpo_demo.db`, annoncée comme telle | `DATABASE_URL` + profil dans `profiles.py` | **ouvert** (donnée manquante) |
+| 2 | Référentiel taxonomique (TaxRef ?) | Libellés `species` / `latin_name`, vocabulaire servi par `list_species` | colonnes du profil | **ouvert** |
+| 3 | Quel renderer A2UI cible ? | Renderer JS autonome `web/static/renderer.js`, 14 composants | remplacer le renderer, messages inchangés | **ouvert** (choix client) |
+| 4 | Transport MCP en production | `stdio` par défaut ; `streamable-http` testé et documenté | `LPO_MCP_URL` / `LPO_MCP_COMMAND` | **traité** (les deux modes testés) |
+| 5 | Format d'inférence A2UI | JSON canonique validé contre le catalogue | — | **tranché** |
+| 6 | Clé / provider LLM | Heuristique déterministe ; chemin LLM implémenté et testé avec un faux modèle | `LPO_LLM_INTENT=auto` + `.env` | **prêt**, clé manquante |
+| 7 | Liste officielle des espèces sensibles | Liste fournie par configuration, sinon colonne `sensitive` + statut de protection | `LPO_SENSITIVE_SPECIES` / `LPO_SENSITIVE_SPECIES_FILE` | **traité** (configurable) |
+| 8 | Volumétrie cible | Plafond 500 lignes/outil, agrégats en base, index recommandés | `scripts/create_indexes.py`, vues matérialisées ensuite | **traité** (outillage fourni) |
+| 9 | Authentification / multi-utilisateur | Jeton unique optionnel `LPO_WEB_TOKEN` ; conversations opaques | variable d'environnement | **partiel** (mono-jeton) |
+| 10 | Accessibilité | `@accessibility` **refusé** par la spec v1.0 ; rôles ARIA dans le renderer + résumé texte | — | **tranché par le protocole** |
+
+Ce qui reste réellement bloquant pour une mise en production : la **donnée
+source** (#1) et le **référentiel taxonomique** (#2). Tout le reste est soit
+tranché, soit paramétrable.

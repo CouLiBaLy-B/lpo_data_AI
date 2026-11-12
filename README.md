@@ -186,12 +186,16 @@ API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
 | `LPO_MCP_URL` | URL d'un serveur MCP `streamable-http` existant |
 | `LPO_MCP_COMMAND` | commande du serveur MCP `stdio` (défaut : `python -m lpo_data_mcp`) |
 | `LPO_PRIVACY_MODE` | `auto` (défaut) / `exact` / `blurred` / `department` |
+| `LPO_BLUR_DECIMALS` | mailles de floutage : `1` (défaut, ~11 km) à `0` (~111 km) |
 | `LPO_ALLOW_EXACT_COORDINATES` | `1` pour autoriser les coordonnées exactes d'espèces sensibles |
+| `LPO_SENSITIVE_SPECIES` | liste des espèces sensibles, séparées par des virgules |
+| `LPO_SENSITIVE_SPECIES_FILE` | même liste dans un fichier (un libellé par ligne, `#` = commentaire) |
+| `LPO_WEB_TOKEN` | jeton bearer exigé par l'API (laisser vide = API ouverte, mode démo) |
 
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest            # 170 tests
+.venv/bin/python -m pytest            # 201 tests
 ```
 
 Afficher le prompt système et les exemples few-shot utilisés par l'agent :
@@ -204,8 +208,35 @@ Couverture : garde-fous SQL, confidentialité (floutage), contrat des outils MCP
 serveur MCP réel en `stdio`, client MCP de production sur transport réel,
 catalogue et gabarits A2UI, compréhension de l'intention, orchestrateur
 (create/update, dégradation, états vides), prompt système et few-shots A2UI,
+chemin LLM de l'intention (faux modèle), liste de sensibilité configurée,
+transport MCP `streamable-http` réel, jeton d'accès de l'API, script d'index,
 API web, et **chaîne complète** (HTTP → agent → sous-processus MCP → SQLite) via
 `tests/test_web_e2e.py`.
+
+## 6 bis. Index de performance (base réelle)
+
+```bash
+python scripts/create_indexes.py --dry-run   # affiche le SQL
+python scripts/create_indexes.py             # crée les index manquants
+```
+
+Idempotent, non destructif, adapté au profil détecté (`(species, event_date)`,
+`(department, region)`, `(species_id)`, …). Sans effet sur la base de
+démonstration, décisif sur une table de plusieurs millions de lignes.
+
+## 6 ter. Protéger l'API et configurer la sensibilité
+
+```bash
+# API protégée par jeton (le client accepte /?token=… une seule fois)
+LPO_WEB_TOKEN="$(openssl rand -hex 24)" uvicorn web.app:app --port 8080
+
+# Liste officielle des espèces sensibles, sans redémarrage
+LPO_SENSITIVE_SPECIES="Milan royal,Busard cendré,Aigle royal" \
+  python -m lpo_data_mcp
+```
+
+Détails (transport HTTP en production, reverse-proxy, volumétrie, journaux) :
+[docs/02-exploitation.md](docs/02-exploitation.md).
 
 ## 7. Exemple bout en bout
 
@@ -236,6 +267,8 @@ régénérer).
 | `lpo_a2ui/examples/` | Trace bout en bout + rendu DOM |
 | `docs/00-analyse-depot.md` | Rapport d'analyse (Étape 0) et questions ouvertes |
 | `docs/01-architecture.md` | Architecture, choix techniques, conformité A2UI v1.0 |
+| `docs/02-exploitation.md` | Configuration, déploiement, confidentialité, volumétrie, limites |
+| `scripts/create_indexes.py` | Index recommandés pour une base réelle (idempotent) |
 
 ## 9. Compatibilité
 

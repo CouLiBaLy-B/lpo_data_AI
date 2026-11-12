@@ -115,10 +115,27 @@ function applyTurn(turn, { echo = false } = {}) {
 
 // ── Appels réseau ──────────────────────────────────────────────────────────
 
+// Jeton optionnel : l'API peut être protégée (LPO_WEB_TOKEN). Il est fourni une
+// fois par l'URL (`?token=…`), gardé en mémoire, puis retiré de la barre
+// d'adresse pour ne pas rester dans l'historique ni dans les journaux du proxy.
+const accessToken = (() => {
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get("token");
+  if (token) {
+    url.searchParams.delete("token");
+    window.history.replaceState(null, "", url.toString());
+  }
+  return token || "";
+})();
+
+function authHeaders(extra = {}) {
+  return accessToken ? { ...extra, Authorization: `Bearer ${accessToken}` } : extra;
+}
+
 async function api(path, body) {
   const response = await fetch(path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(body),
   });
   if (!response.ok) {
@@ -188,7 +205,9 @@ async function handleAction(action) {
 
 async function loadCatalog() {
   try {
-    const info = await fetch("/api/catalog").then((response) => response.json());
+    const info = await fetch("/api/catalog", { headers: authHeaders() }).then((response) =>
+      response.json(),
+    );
     catalogInfo = info;
     protocolBadge.textContent = `A2UI ${info.protocolVersion} · ${info.components.length} composants`;
     protocolBadge.title = `${info.catalogId}\n${info.protocolDocs}`;
@@ -200,7 +219,9 @@ async function loadCatalog() {
 
 async function loadDataset() {
   try {
-    const overview = await fetch("/api/dataset").then((response) => response.json());
+    const overview = await fetch("/api/dataset", { headers: authHeaders() }).then((response) =>
+      response.json(),
+    );
     if (overview.is_demo) {
       demoBadge.hidden = false;
       demoBadge.title = overview.dataset_label || "Jeu de démonstration synthétique";

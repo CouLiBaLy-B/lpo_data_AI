@@ -155,13 +155,29 @@ class LpoDataService:
             where.add(f"{lower_trim(profile.region)} = LOWER(:region)", region=region.strip())
 
     def _sensitive_expr(self) -> str | None:
+        """Expression SQL « cette ligne est-elle sensible ? ».
+
+        Trois sources, combinées par OU : la colonne dédiée du schéma, le statut
+        de protection, et la **liste configurée** (`LPO_SENSITIVE_SPECIES` /
+        `LPO_SENSITIVE_SPECIES_FILE`) comparée au libellé d'espèce. Cette
+        dernière permet d'appliquer une liste officielle sur un schéma qui ne
+        porte aucun indicateur de sensibilité.
+        """
         profile = self.profile
+        parts: list[str] = []
         if profile.sensitive:
-            return ident(profile.sensitive)
+            parts.append(f"({ident(profile.sensitive)})")
         if profile.protection:
             values = ", ".join(f"'{v.lower()}'" for v in profile.protected_values)
-            return f"(LOWER(TRIM({ident(profile.protection)})) IN ({values}))"
-        return None
+            parts.append(f"(LOWER(TRIM({ident(profile.protection)})) IN ({values}))")
+        species_column = profile.species_label or profile.species_key
+        if species_column:
+            clause = privacy_rules.sensitive_species_sql_clause(ident(species_column))
+            if clause:
+                parts.append(clause)
+        if not parts:
+            return None
+        return parts[0] if len(parts) == 1 else "(" + " OR ".join(parts) + ")"
 
     def _base_where(
         self,
@@ -250,6 +266,12 @@ class LpoDataService:
             summary = f"{dataset_label}. " + summary
         if profile.notes:
             summary += " Limites : " + " ".join(profile.notes)
+        configured_species = privacy_rules.configured_sensitive_species()
+        if configured_species:
+            warnings.append(
+                f"{len(configured_species)} espèce(s) marquée(s) sensible(s) par configuration "
+                "(LPO_SENSITIVE_SPECIES) : leur localisation est floutée."
+            )
 
         return DatasetOverview(
             summary=summary,

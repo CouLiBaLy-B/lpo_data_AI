@@ -126,6 +126,20 @@ PERIOD_PRESETS: dict[str, str] = {
 }
 
 
+def _safe_iso(value: str | None) -> str | None:
+    """Normalise une date ISO proposée par un LLM ; ignore tout le reste.
+
+    Les dates d'intention partent directement dans des filtres SQL : une valeur
+    malformée doit être écartée ici, pas provoquer une erreur plus loin.
+    """
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(str(value).strip()[:10]).isoformat()
+    except (TypeError, ValueError):
+        return None
+
+
 def resolve_period(preset: str, today: date | None = None) -> tuple[str | None, str | None, str]:
     """Traduit un preset en bornes ISO + libellé."""
     today = today or date.today()
@@ -404,7 +418,7 @@ class IntentParser:
 
         # Garde-fous : libellés d'espèces obligatoirement présents dans le vocabulaire
         species = [s for s in payload.species if s in self.species_vocab][:3]
-        start, end = payload.start_date, payload.end_date
+        start, end = _safe_iso(payload.start_date), _safe_iso(payload.end_date)
         if not start and payload.period_preset:
             start, end, label = resolve_period(payload.period_preset, today)
             if not payload.period_label:
@@ -417,6 +431,17 @@ class IntentParser:
             payload.kind = "trend"
         if payload.kind == "species" and len(species) != 1:
             payload.kind = "trend" if species else "ranking"
+        # Même garde « hors périmètre » que l'heuristique : un modèle ne doit pas
+        # pouvoir déclencher une analyse naturaliste sur une question étrangère.
+        if payload.kind in {"trend", "ranking", "map", "species", "comparison"} and not (
+            has_domain_signal(
+                question,
+                species,
+                (payload.department, payload.region),
+                payload.period_preset if start else "all",
+            )
+        ):
+            payload.kind = "unknown"
         return Intent.from_model(
             payload,
             question=question,

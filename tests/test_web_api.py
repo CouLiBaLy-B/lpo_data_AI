@@ -164,3 +164,45 @@ def test_no_arbitrary_markup_leaks_into_messages(client):
     blob = repr(body["messages"])
     for forbidden in ("<script", "javascript:", "onclick=", "<style"):
         assert forbidden not in blob
+
+
+# ── Jeton d'accès optionnel ─────────────────────────────────────────────────
+
+
+def test_api_is_open_without_configured_token(client, monkeypatch):
+    monkeypatch.delenv("LPO_WEB_TOKEN", raising=False)
+    assert client.get("/api/dataset").status_code == 200
+    assert (
+        client.post("/api/ask", json={"question": "Fiche espèce du Héron cendré"}).status_code
+        == 200
+    )
+
+
+def test_configured_token_is_enforced(client, monkeypatch):
+    monkeypatch.setenv("LPO_WEB_TOKEN", "s3cret")
+    anonymous = client.post("/api/ask", json={"question": "Fiche espèce du Héron cendré"})
+    assert anonymous.status_code == 401
+    assert anonymous.headers["www-authenticate"] == "Bearer"
+    assert client.get("/api/dataset").status_code == 401
+
+    wrong = client.post(
+        "/api/ask",
+        json={"question": "Fiche espèce du Héron cendré"},
+        headers={"Authorization": "Bearer faux"},
+    )
+    assert wrong.status_code == 401
+
+    allowed = client.post(
+        "/api/ask",
+        json={"question": "Fiche espèce du Héron cendré"},
+        headers={"Authorization": "Bearer s3cret"},
+    )
+    assert allowed.status_code == 200
+    assert allowed.json()["kind"] == "species"
+
+
+def test_health_and_catalog_stay_public(client, monkeypatch):
+    """Les sondes de disponibilité et le catalogue ne révèlent aucune donnée."""
+    monkeypatch.setenv("LPO_WEB_TOKEN", "s3cret")
+    assert client.get("/api/health").status_code == 200
+    assert client.get("/api/catalog").status_code == 200
