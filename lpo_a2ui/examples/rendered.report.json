@@ -10,7 +10,7 @@
         "lpo-exemple-bout-en-bout-1"
       ],
       "composants": 21,
-      "noeuds": 172,
+      "noeuds": 173,
       "noop": [],
       "erreurs": []
     },
@@ -75,7 +75,7 @@
         "lpo-exemple-bout-en-bout-4"
       ],
       "composants": 21,
-      "noeuds": 628,
+      "noeuds": 629,
       "noop": [],
       "erreurs": []
     },

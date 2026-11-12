@@ -22,7 +22,8 @@
           interface A2UI construite à partir des outils MCP, jamais du texte inventé.
         </p>
       </div>
-      <p class="status" aria-label="État du service">
+      <p class="status">
+        <span class="sr-only">État du service :</span>
         <span id="protocol-badge">A2UI v1.0</span>
         <span class="sep" aria-hidden="true">·</span>
         <span id="mcp-badge">MCP lpo-data</span>
@@ -54,8 +55,8 @@
         </div>
 
         <p class="hint">
-          Lecture seule sur le serveur MCP <code>lpo-data</code>. Chaque message A2UI est validé
-          avant rendu ; les filtres ne renvoient que des données.
+          Lecture seule sur le MCP <code>lpo-data</code>. Chiffres issus des outils, jamais
+          estimés.
         </p>
 
         <div class="examples" id="examples" aria-labelledby="examples-label">
@@ -107,7 +108,7 @@
             type="text"
             autocomplete="off"
             maxlength="500"
-            placeholder="Votre question sur les observations…"
+            placeholder="Poser une question…"
             required
           />
           <button type="submit" id="send">Envoyer</button>

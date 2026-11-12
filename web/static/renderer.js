@@ -121,6 +121,7 @@ export class A2uiRenderer {
     this.geo = null;
     this.geoPromise = null;
     this.errors = [];
+    this.observers = [];
   }
 
   /** Applique un message agent → renderer. Renvoie true si accepté. */
@@ -176,6 +177,8 @@ export class A2uiRenderer {
 
   reset() {
     this.surfaces.clear();
+    for (const observer of this.observers) observer.disconnect();
+    this.observers = [];
     this.container.replaceChildren();
   }
 
@@ -397,11 +400,32 @@ export class A2uiRenderer {
           node.append(self.#placeholder(emptyMessage || "Aucune série à afficher."));
           return node;
         }
-        node.append(drawLineChart(series, {
-          height: Number(component.height) || 320,
+        const body = document.createElement("div");
+        body.className = "chart-body";
+        node.append(body);
+
+        const options = {
           xLabel: self.#text(self.resolve(component.xLabel, surface, basePath)),
           yLabel: self.#text(self.resolve(component.yLabel, surface, basePath)),
-        }));
+        };
+        const fixedHeight = Number(component.height) || 0;
+        let lastWidth = 0;
+        const paint = () => {
+          const width = Math.max(280, Math.round(body.clientWidth || 720));
+          if (width === lastWidth) return;
+          lastWidth = width;
+          body.replaceChildren(
+            drawLineChart(series, {
+              ...options,
+              width,
+              ...(fixedHeight ? { height: fixedHeight } : {}),
+            }),
+          );
+        };
+        paint();
+        // Un SVG mis à l'échelle du conteneur grossit aussi ses libellés :
+        // on redessine à la largeur mesurée plutôt que d'étirer le dessin.
+        self.#observeWidth(body, paint);
         return node;
       },
 
@@ -460,8 +484,23 @@ export class A2uiRenderer {
               : "Localisation : échelle départementale";
         meta.append(legend, badge);
         node.append(meta);
+        const fixedHeight = Number(component.height) || 0;
+        let lastWidth = 0;
         this.loadGeo().then((geo) => {
-          figure.replaceChildren(drawMap(points, { geo, height: Number(component.height) || 460 }));
+          const paint = () => {
+            const width = Math.max(280, Math.round(figure.clientWidth || 720));
+            if (width === lastWidth) return;
+            lastWidth = width;
+            figure.replaceChildren(
+              drawMap(points, {
+                geo,
+                width,
+                ...(fixedHeight ? { height: fixedHeight } : {}),
+              }),
+            );
+          };
+          paint();
+          self.#observeWidth(figure, paint);
         });
         return node;
       },
@@ -539,6 +578,14 @@ export class A2uiRenderer {
         return wrapper;
       },
     };
+  }
+
+  /** Redessine quand la largeur disponible change (jamais sur la hauteur). */
+  #observeWidth(element, paint) {
+    if (typeof ResizeObserver !== "function") return;
+    const observer = new ResizeObserver(() => paint());
+    this.observers.push(observer);
+    observer.observe(element);
   }
 
   // ── Actions et fond de carte ─────────────────────────────────────────────
@@ -629,8 +676,10 @@ function formatValue(value, decimals = 0) {
 }
 
 /** Courbes multi-séries, axes et légende, en SVG pur. */
-function drawLineChart(series, { height = 320, xLabel = "", yLabel = "" } = {}) {
-  const width = 720;
+function drawLineChart(series, { width = 720, height, xLabel = "", yLabel = "" } = {}) {
+  // La hauteur suit la largeur disponible : un graphique étiré en hauteur
+  // écrase la lecture, un graphique trop plat la rend approximative.
+  height = height || Math.round(Math.min(380, Math.max(220, width * 0.42)));
   const margin = { top: 16, right: 20, bottom: 50, left: 64 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
@@ -831,8 +880,8 @@ function drawBarChart(items) {
 }
 
 /** Carte : fond départemental (GeoJSON) + points projetés. */
-function drawMap(points, { geo = null, height = 460 } = {}) {
-  const width = 720;
+function drawMap(points, { geo = null, width = 720, height } = {}) {
+  height = height || Math.round(width * 0.64);
   const bounds = { lonMin: -5.4, lonMax: 9.8, latMin: 41.2, latMax: 51.3 };
   const project = (lon, lat) => {
     const scaleX = width / (bounds.lonMax - bounds.lonMin);
