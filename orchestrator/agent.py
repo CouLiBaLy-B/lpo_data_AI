@@ -219,7 +219,12 @@ class LpoAssistant:
             return {
                 "agg": await self._call(
                     "aggregate_observations",
-                    {**base, "group_by": "species", "metric": intent.metric, "limit": 10},
+                    {
+                        **base,
+                        "group_by": intent.rank_by,
+                        "metric": intent.metric,
+                        "limit": 10,
+                    },
                     trace,
                 )
             }
@@ -283,7 +288,18 @@ class LpoAssistant:
             if conversation.surface_id:
                 messages.extend(templates.delete_messages(conversation.surface_id))
                 surface_id = conversation.next_surface_id()
-            messages.extend(templates.surface_messages(view.kind, surface_id, view.data))
+            messages.extend(
+                templates.surface_messages(
+                    view.kind,
+                    surface_id,
+                    view.data,
+                    columns=templates.table_columns(
+                        view.kind,
+                        unit_label=str(view.data.get("unit") or "observations"),
+                        dimension=view.dimension,
+                    ),
+                )
+            )
             conversation.surface_id = surface_id
             conversation.last_kind = view.kind
             mode = "create"

@@ -235,3 +235,28 @@ def test_protected_species_are_sensitive_even_with_an_explicit_column(demo_servi
     assert page.observations
     assert all(point.lat is None or round(point.lat, 1) == point.lat for point in page.observations)
     assert page.meta.privacy == "blurred"
+
+
+# ── Extrait réel : classement par catégorie ──────────────────────────────────
+
+
+def test_repo_profile_aggregates_categories(repo_service):
+    """La colonne `category` distingue les zones réglementaires des espèces."""
+    result = repo_service.aggregate_observations(group_by="category")
+    values = {p.label: p.value for p in result.points}
+    assert values == {"zone reglementaire": 131, "Espece": 38}
+    assert result.total == 169
+    assert "par catégorie" in result.summary
+    assert "enregistrements" in result.summary
+
+
+def test_demo_profile_reports_missing_category_capability(demo_service):
+    """Sur une base d'observations, la dimension catégorie n'existe pas.
+
+    L'outil ne doit pas inventer une colonne : il renvoie un état vide explicite
+    que l'orchestrateur affichera tel quel.
+    """
+    result = demo_service.aggregate_observations(group_by="category")
+    assert result.points == []
+    assert result.total == 0
+    assert any("category" in w for w in result.meta.warnings)

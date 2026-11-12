@@ -553,7 +553,7 @@ class LpoDataService:
 
         privacy_label = ",".join(sorted(resolved_modes)) or privacy_mode
         summary = (
-            f"{_num(total)} observation(s) correspondent aux filtres ; "
+            f"{_num(total)} {profile.records_label} correspondent aux filtres ; "
             f"{len(observations)} renvoyée(s) à partir de la ligne {offset_i}."
         )
         if blurred:
@@ -646,6 +646,19 @@ class LpoDataService:
                     privacy=privacy_mode,
                 ),
             )
+        if group_by == "category" and not profile.category:
+            return AggregateResult(
+                summary="Agrégation par catégorie impossible : colonne absente.",
+                group_by=group_by,
+                metric=metric,
+                points=[],
+                total=0,
+                meta=self._meta(
+                    row_count=0,
+                    warnings=warnings + ["Capacité 'category' absente."],
+                    privacy=privacy_mode,
+                ),
+            )
         if group_by == "department" and not profile.department:
             return AggregateResult(
                 summary="Agrégation par département impossible : colonne absente.",
@@ -687,6 +700,11 @@ class LpoDataService:
             column = profile.department if group_by == "department" else profile.region
             group_cols = f"{ident(column or '')} AS k"
             where.add(f"{ident(column or '')} IS NOT NULL AND TRIM({ident(column or '')}) != ''")
+            order_clause = "ORDER BY value DESC"
+        elif group_by == "category":
+            column = ident(profile.category or "")
+            group_cols = f"{column} AS k"
+            where.add(f"{column} IS NOT NULL AND TRIM({column}) != ''")
             order_clause = "ORDER BY value DESC"
         elif group_by == "species":
             if profile.species_where:
@@ -772,16 +790,20 @@ class LpoDataService:
                 "Coordonnées agrégées sur une maille d'environ "
                 f"{privacy_rules.grid_size_km()} km (protection des espèces sensibles)."
             )
-        if profile.notes and group_by in {"department", "region", "species"}:
+        if profile.notes and group_by in {"department", "region", "species", "category"}:
             warnings.extend(profile.notes[:1])
 
-        metric_label = "observations" if metric == "observations" else "individus"
+        # « observations » n'est le bon mot que si la table contient des
+        # observations : l'extrait réel contient des zones, donc des
+        # « enregistrements ».
+        metric_label = profile.records_label if metric == "observations" else "individus"
         unit = {
             "year": "par an",
             "month": "par mois",
             "department": "par département",
             "region": "par région",
             "species": "par espèce",
+            "category": "par catégorie",
             "grid": "par maille",
             "species_month": "par mois et par espèce",
             "species_year": "par an et par espèce",

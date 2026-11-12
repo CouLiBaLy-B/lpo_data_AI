@@ -324,15 +324,56 @@ def normalise_data(kind: SurfaceKind, data: dict | None) -> dict:
 # ── Fabriques de messages ────────────────────────────────────────────────────
 
 
-def surface_messages(kind: SurfaceKind, surface_id: str, data: dict | None) -> list[dict]:
+#: Entête de la colonne de valeurs d'un classement, par dimension.
+_DIMENSION_HEADS: dict[str, str] = {
+    "species": "Espèce",
+    "department": "Département",
+    "region": "Région",
+    "category": "Catégorie",
+}
+
+
+def table_columns(
+    kind: SurfaceKind,
+    unit_label: str = "observations",
+    dimension: str = "species",
+) -> list[dict]:
+    """Colonnes du tableau, adaptées à l'unité réelle et à la dimension.
+
+    Les entêtes font partie de la **structure** A2UI : ils ne peuvent pas venir
+    du data model, donc l'orchestrateur les fixe ici à partir du résultat d'outil
+    (« enregistrements » sur l'extrait zones, « Département » pour un classement
+    territorial).
+    """
+    if kind == "empty":
+        return []
+    columns = [dict(column) for column in _COLUMNS.get(kind, [])]
+    unit = (unit_label or "observations").strip()
+    for column in columns:
+        if column["key"] == "value":
+            column["label"] = unit[:1].upper() + unit[1:]
+    if kind == "ranking":
+        head = _DIMENSION_HEADS.get(dimension, _DIMENSION_HEADS["species"])
+        for column in columns:
+            if column["key"] == "label":
+                column["label"] = head
+    return columns
+
+
+def surface_messages(
+    kind: SurfaceKind,
+    surface_id: str,
+    data: dict | None,
+    columns: list[dict] | None = None,
+) -> list[dict]:
     """Messages de création d'une surface pour un modèle d'interface donné."""
     model = normalise_data(kind, data)
     if kind == "empty":
         components = _empty_components()
     elif kind == "species":
-        components = _species_components()
+        components = _species_components(columns)
     else:
-        components = _shell(kind, _chart(kind), _COLUMNS[kind])
+        components = _shell(kind, _chart(kind), columns or _COLUMNS[kind])
 
     return [
         {
@@ -428,7 +469,7 @@ def _empty_components() -> list[dict]:
     ]
 
 
-def _species_components() -> list[dict]:
+def _species_components(columns: list[dict] | None = None) -> list[dict]:
     """Fiche espèce : identité, statut, chiffres clés et série mensuelle."""
     return [
         {
@@ -494,7 +535,7 @@ def _species_components() -> list[dict]:
             "component": "DataTable",
             "title": {"@path": "/table/title"},
             "caption": {"@path": "/table/caption"},
-            "columns": _COLUMNS["species"],
+            "columns": columns or _COLUMNS["species"],
             "rows": {"@path": "/table/rows"},
             "maxRows": 12,
             "emptyMessage": {"@path": "/table/emptyMessage"},

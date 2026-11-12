@@ -29,6 +29,8 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 
 Kind = Literal["trend", "ranking", "map", "comparison", "species", "unknown"]
+#: Sur quoi porte un classement : les espèces, ou une maille du territoire.
+RankDimension = Literal["species", "department", "region", "category"]
 Preset = Literal["10y", "12m", "this_year", "last_year", "spring", "all", "custom"]
 Granularity = Literal["year", "month"]
 Metric = Literal["observations", "individuals"]
@@ -67,6 +69,9 @@ class Intent:
     rationale: str = ""
     raw_question: str = ""
     filters: dict[str, str] = field(default_factory=dict)
+    #: Dimension d'un classement. Sur l'extrait réel (zones, sans noms d'espèces),
+    #: les questions naturelles portent sur les départements ou les catégories.
+    rank_by: RankDimension = "species"
     #: Espèces citées dans la question mais absentes du jeu de données exposé.
     #: Une liste non vide interdit de répondre : les données d'une autre espèce
     #: ne peuvent pas être attribuées à celle-ci.
@@ -468,6 +473,26 @@ def has_domain_signal(
     return bool(_DOMAIN_SIGNAL.search(normalize(text)))
 
 
+def guess_rank_dimension(text: str, species: list[str]) -> RankDimension:
+    """Choisit la dimension d'un classement d'après les mots de la question.
+
+    Priorité : catégorie, puis région, puis département (y compris le mot
+    « zone », qui sur l'extrait réel désigne des zones administratives), sinon
+    les espèces. Une espèce explicitement citée l'emporte : « top des communes
+    pour le Milan royal » reste un classement d'espèces.
+    """
+    q = normalize(text)
+    if species:
+        return "species"
+    if re.search(r"categor", q):
+        return "category"
+    if re.search(r"\bregions?\b", q) and not re.search(r"departement", q):
+        return "region"
+    if re.search(r"departement|\bzones?\b", q):
+        return "department"
+    return "species"
+
+
 def guess_kind(text: str, species: list[str], wants_compare: bool) -> str:
     """Choisit la visualisation adaptée à l'intention exprimée."""
     q = normalize(text)
@@ -517,6 +542,7 @@ class IntentParser:
             and len(species) >= 2
         )
         kind = guess_kind(question, species, compare)
+        rank_by = guess_rank_dimension(question, species) if kind == "ranking" else "species"
         if kind in {"trend", "ranking"} and not has_domain_signal(
             question, species, (department, region), preset
         ):
@@ -541,6 +567,7 @@ class IntentParser:
             granularity=granularity,
             rationale="Heuristique déterministe (mots-clés + vocabulaire MCP).",
             raw_question=question,
+            rank_by=rank_by,
             unknown_species=unknown[:3],
         )
 
@@ -616,6 +643,11 @@ class IntentParser:
             start_date=start,
             end_date=end,
             rationale=payload.rationale or "Intention extraite par le LLM.",
+            # La dimension reste déterministe : le modèle ne choisit que le type
+            # de vue, jamais la façon de découper les données.
+            rank_by=(
+                guess_rank_dimension(question, species) if payload.kind == "ranking" else "species"
+            ),
             unknown_species=unknown[:3],
         )
 

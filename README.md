@@ -134,7 +134,11 @@ python scripts/seed_demo_db.py --rows 12000
 
 La base réelle du dépôt (`data/sensitive_areas.db`, 169 lignes, sans
 coordonnées ni effectifs) reste utilisable via un autre **profil** ; l'interface
-dégrade alors explicitement au lieu d'inventer.
+dégrade alors explicitement au lieu d'inventer. Les questions y portent sur les
+**zones**, pas sur les espèces : le classement suit l'axe demandé
+(`department`, `region`, `category`) et les textes parlent d'« enregistrements ».
+Exemples vérifiés sur l'extrait : « combien de zones en Haute-Savoie ? » → 28 ;
+« classement des zones par catégorie » → 131 « zone reglementaire » / 38 « Espece ».
 
 ## 3. Lancer le serveur MCP seul
 
@@ -202,7 +206,7 @@ API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest            # 315 tests (1 ignoré : intégration PostgreSQL)
+.venv/bin/python -m pytest            # 334 tests (1 ignoré : intégration PostgreSQL)
 ```
 
 Afficher le prompt système et les exemples few-shot utilisés par l'agent :

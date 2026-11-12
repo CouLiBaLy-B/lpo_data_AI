@@ -26,6 +26,10 @@ class BuiltView:
     data: dict
     text: str
     notes: list[str] = field(default_factory=list)
+    #: Dimension d'un classement (« species », « department », « region »,
+    #: « category »). Sert aux en-têtes de colonnes, qui font partie de la
+    #: structure A2UI et ne peuvent donc pas venir du data model.
+    dimension: str = "species"
 
 
 # ── Formatage ────────────────────────────────────────────────────────────────
@@ -281,8 +285,9 @@ def build_trend(
             }
         )
 
+    subject = f"{intent.species_label} : " if intent.species else ""
     text = (
-        f"{intent.species_label} : {fmt_int(agg.get('total'))} {unit} au total "
+        f"{subject}{fmt_int(agg.get('total'))} {unit} au total "
         f"({intent.period_label or 'toute la période'}, {intent.area_label}). "
         f"Maximum en {peak.get('label')} avec {fmt_int(peak.get('value'))} {unit}."
     )
@@ -293,7 +298,11 @@ def build_trend(
 
     period_unit = "mois" if intent.granularity == "month" else "année"
     data = {
-        "header": _header(intent, f"Évolution des {unit} — {intent.species_label}"),
+        "header": _header(
+            intent,
+            f"Évolution des {unit} — "
+            f"{intent.species_label if intent.species else intent.area_label}",
+        ),
         "kpis": kpis,
         "chart": {
             "title": f"{unit.capitalize()} par {period_unit}",
@@ -308,6 +317,9 @@ def build_trend(
             "rows": _delta_rows(sorted_points),
             "emptyMessage": "Aucune période à afficher.",
         },
+        # L'unité est portée par les données ; les entêtes de colonnes, qui sont
+        # de la structure, la reprennent via `templates.table_columns`.
+        "unit": unit,
         "notices": base_notices,
         "filters": ctx.filters(intent),
         "footer": {"source": ctx.source_line(agg, privacy=privacy)},
@@ -317,6 +329,42 @@ def build_trend(
 
 # ── Classement ───────────────────────────────────────────────────────────────
 
+#: Libellés d'un classement, selon la dimension demandée.
+RANK_LABELS: dict[str, dict[str, str]] = {
+    "species": {
+        "plural": "espèces",
+        "singular": "Espèce",
+        "reason": "Aucune espèce observée ne correspond aux filtres.",
+        "counted": "Espèces classées",
+        "empty_chart": "Aucune espèce à classer.",
+        "hint": "Vérifier la période, la zone ou le libellé d'espèce.",
+    },
+    "department": {
+        "plural": "départements",
+        "singular": "Département",
+        "reason": "Aucun département ne correspond aux filtres.",
+        "counted": "Départements classés",
+        "empty_chart": "Aucun département à classer.",
+        "hint": "Vérifier la période ou la zone.",
+    },
+    "region": {
+        "plural": "régions",
+        "singular": "Région",
+        "reason": "Aucune région ne correspond aux filtres.",
+        "counted": "Régions classées",
+        "empty_chart": "Aucune région à classer.",
+        "hint": "Vérifier la période ou la zone.",
+    },
+    "category": {
+        "plural": "catégories",
+        "singular": "Catégorie",
+        "reason": "Aucune catégorie ne correspond aux filtres.",
+        "counted": "Catégories classées",
+        "empty_chart": "Aucune catégorie à classer.",
+        "hint": "Vérifier la période ou la zone.",
+    },
+}
+
 
 def build_ranking(intent: Intent, agg: dict, ctx: ViewContext) -> BuiltView:
     points = sorted(
@@ -325,16 +373,15 @@ def build_ranking(intent: Intent, agg: dict, ctx: ViewContext) -> BuiltView:
         reverse=True,
     )[:10]
     base_notices = ctx.dataset_notices() + ctx.warnings(agg)
+    dimension = getattr(intent, "rank_by", "species") or "species"
+    labels = RANK_LABELS.get(dimension, RANK_LABELS["species"])
 
     if not points:
         return _empty_view(
             intent,
             ctx,
-            title=f"Classement des espèces — {intent.area_label}",
-            reason=(
-                "Aucune espèce observée ne correspond aux filtres. Vérifier la période, "
-                "la zone ou le libellé d'espèce."
-            ),
+            title=f"Classement des {labels['plural']} — {intent.area_label}",
+            reason=f"{labels['reason']} {labels['hint']}",
             extra_notices=base_notices,
         )
 
@@ -358,21 +405,22 @@ def build_ranking(intent: Intent, agg: dict, ctx: ViewContext) -> BuiltView:
         for index, p in enumerate(points)
     ]
     leader = points[0]
+    total_scope = "toutes confondues" if dimension != "species" else "toutes espèces"
     kpis = [
         {
-            "label": f"{unit.capitalize()} (toutes espèces)",
+            "label": f"{unit.capitalize()} ({total_scope})",
             "value": fmt_int(agg.get("total")),
             "hint": intent.period_label or "toute la période",
             "tone": "neutral",
         },
         {
-            "label": "Espèce en tête",
+            "label": f"{labels['singular']} en tête",
             "value": str(leader.get("label")),
             "hint": f"{fmt_int(leader.get('value'))} {unit}",
             "tone": "neutral",
         },
         {
-            "label": "Espèces classées",
+            "label": labels["counted"],
             "value": fmt_int(len(points)),
             "hint": (
                 f"sur {fmt_int((agg.get('meta') or {}).get('row_count', len(points)))} renvoyées"
@@ -380,24 +428,43 @@ def build_ranking(intent: Intent, agg: dict, ctx: ViewContext) -> BuiltView:
             "tone": "neutral",
         },
     ]
-    text = (
-        f"Sur la zone « {intent.area_label} » ({intent.period_label or 'toute la période'}), "
-        f"{leader.get('label')} arrive en tête avec {fmt_int(leader.get('value'))} {unit} "
-        f"({fmt_pct(leader.get('share') or 0, 1)} du total)"
-    )
-    runners_up = [str(p.get("label")) for p in points[1:3]]
-    if runners_up:
-        text += ", devant " + ", ".join(runners_up)
-    text += f". Total : {fmt_int(agg.get('total'))} {unit}."
+    period = intent.period_label or "toute la période disponible"
+    if len(points) == 1:
+        # Cas « combien de zones en Haute-Savoie ? » : un seul point, dont le
+        # libellé répéterait la zone filtrée si l'on gardait la phrase générique.
+        text = (
+            f"{leader.get('label')} : {fmt_int(leader.get('value'))} {unit} "
+            f"({period}, périmètre filtré)."
+        )
+    else:
+        if dimension != "species":
+            scope = f"Sur le périmètre filtré ({period})"
+        elif intent.department or intent.region:
+            scope = f"Sur la zone « {intent.area_label} » ({period})"
+        else:
+            # « France entière » n'est pas une zone : ne pas écrire « la zone
+            # France entière ».
+            scope = f"Sur l'ensemble du périmètre ({period})"
+        text = (
+            f"{scope}, {leader.get('label')} arrive en tête avec "
+            f"{fmt_int(leader.get('value'))} {unit} "
+            f"({fmt_pct(leader.get('share') or 0, 1)} du total)"
+        )
+        runners_up = [str(p.get("label")) for p in points[1:3]]
+        if runners_up:
+            text += ", devant " + ", ".join(runners_up)
+        text += f". Total : {fmt_int(agg.get('total'))} {unit}."
 
     data = {
-        "header": _header(intent, f"Top {len(points)} des espèces — {intent.area_label}"),
+        "header": _header(
+            intent, f"Top {len(points)} des {labels['plural']} — {intent.area_label}"
+        ),
         "kpis": kpis,
         "chart": {
             "title": f"Classement par {unit}",
             "items": items,
             "valueLabel": unit.capitalize(),
-            "emptyMessage": "Aucune espèce à classer.",
+            "emptyMessage": labels["empty_chart"],
         },
         "table": {
             "title": "Détail du classement",
@@ -405,11 +472,12 @@ def build_ranking(intent: Intent, agg: dict, ctx: ViewContext) -> BuiltView:
             "rows": rows,
             "emptyMessage": "Aucune ligne.",
         },
+        "unit": unit,
         "notices": base_notices,
         "filters": ctx.filters(intent),
         "footer": {"source": ctx.source_line(agg)},
     }
-    return BuiltView("ranking", data, text)
+    return BuiltView("ranking", data, text, dimension=dimension)
 
 
 # ── Carte ────────────────────────────────────────────────────────────────────

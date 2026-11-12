@@ -72,11 +72,18 @@ conformes au catalogue LPO, (4) un résumé texte de repli.
 | Intention | kind | Composant principal | Agrégation |
 | --- | --- | --- | --- |
 | évolution dans le temps | trend | LineChart | `group_by=year` (ou `month`) |
-| top / classement | ranking | BarChart | `group_by=species` (ou `department`) |
+| top / classement d'espèces | ranking | BarChart | `group_by=species` |
+| comptage / classement de zones | ranking | BarChart | `department`, `region` ou `category` |
 | carte / localisation | map | MapChart | `group_by=grid` |
 | comparaison de 2+ espèces | comparison | LineChart multi-séries | `group_by=species_month` |
 | fiche espèce | species | KpiCard + Notice | `get_species_info` |
 | hors périmètre / données absentes | empty | Notice | aucun appel d'agrégation |
+
+L'axe d'un classement est déduit de la question, pas inventé : une question
+qui parle de « zones » sans citer d'espèce (par exemple « combien de zones en
+Haute-Savoie ? ») se classe par département ; « par catégorie » se classe sur
+la colonne `category`, disponible seulement si l'aperçu du jeu de données
+l'annonce dans ses capacités.
 
 ## Format de sortie
 

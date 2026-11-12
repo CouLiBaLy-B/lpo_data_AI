@@ -21,6 +21,7 @@ from orchestrator.intent import (
     extract_species,
     extract_unknown_species,
     guess_kind,
+    guess_rank_dimension,
     has_domain_signal,
     normalize,
     resolve_period,
@@ -289,3 +290,51 @@ def test_intent_contains_no_measure_field():
     fields = set(Intent.__dataclass_fields__)
     for forbidden in ("value", "values", "count", "total", "series", "points"):
         assert forbidden not in fields
+
+
+# ── Dimension d'un classement ────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "question,species,dimension",
+    [
+        ("Top 10 des espèces", [], "species"),
+        ("Top 10 des espèces de Milan royal", ["Milan royal"], "species"),
+        ("Combien de zones en Haute-Savoie ?", [], "department"),
+        ("Classement des départements par nombre de zones", [], "department"),
+        ("Quelles régions concentrent le plus de zones ?", [], "region"),
+        ("Classement des zones par catégorie", [], "category"),
+        # Le mot « zone » désigne une maille administrative ; hors classement,
+        # cette dimension est ignorée par `Intent.rank_by`.
+        ("Évolution du nombre de zones par an", [], "department"),
+    ],
+)
+def test_guess_rank_dimension(question, species, dimension):
+    assert guess_rank_dimension(question, species) == dimension
+
+
+def test_reference_questions_keep_species_ranking(parser):
+    """Un classement sans mot territorial reste un classement d'espèces."""
+    intent = intent_of(parser, "Top 10 des espèces observées dans le Finistère en 2025 ?")
+    assert intent.kind == "ranking"
+    assert intent.rank_by == "species"
+
+
+def test_zone_question_is_a_department_ranking(parser):
+    """Sur l'extrait réel, « combien de zones en Haute-Savoie ? » porte sur un département."""
+    intent = intent_of(parser, "Combien de zones en Gironde ?")
+    assert intent.kind == "ranking"
+    assert intent.rank_by == "department"
+    assert intent.department == "Gironde"
+
+
+def test_trend_question_resets_the_ranking_axis(parser):
+    intent = intent_of(parser, "Évolution du nombre de zones par an")
+    assert intent.kind == "trend"
+    assert intent.rank_by == "species"
+
+
+def test_category_question_targets_the_category_axis(parser):
+    intent = intent_of(parser, "Classement des zones par catégorie")
+    assert intent.kind == "ranking"
+    assert intent.rank_by == "category"

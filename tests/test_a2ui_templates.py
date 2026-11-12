@@ -200,3 +200,33 @@ def test_templates_use_only_catalog_components():
         ]
         for component in components:
             assert component["component"] in catalog_components
+
+
+def test_table_columns_follow_unit_and_ranking_axis():
+    """Les entêtes sont de la structure : ils suivent l'unité et la dimension."""
+    department = templates.table_columns(
+        "ranking", unit_label="enregistrements", dimension="department"
+    )
+    assert [c["label"] for c in department] == ["#", "Département", "Enregistrements", "Part"]
+    category = templates.table_columns("ranking", dimension="category")
+    assert [c["label"] for c in category][1] == "Catégorie"
+    trend = templates.table_columns("trend", unit_label="enregistrements")
+    assert next(c for c in trend if c["key"] == "value")["label"] == "Enregistrements"
+    assert templates.table_columns("empty") == []
+    # Les gabarits par défaut ne sont pas mutés par l'appel.
+    assert templates.table_columns("ranking")[1]["label"] == "Espèce"
+
+
+def test_custom_columns_still_produce_a_valid_surface():
+    messages = templates.surface_messages(
+        "ranking",
+        "s-zone",
+        SAMPLE_DATA,
+        columns=templates.table_columns(
+            "ranking", unit_label="enregistrements", dimension="department"
+        ),
+    )
+    state = validation.new_renderer_state()
+    assert validation.validate_messages(messages, state=state).ok
+    table = next(c for c in messages[0]["createSurface"]["components"] if c["id"] == "table")
+    assert table["columns"][1]["label"] == "Département"

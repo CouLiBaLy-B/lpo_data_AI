@@ -146,7 +146,7 @@ déclare, pour chaque profil :
 
 - la table et les colonnes disponibles ;
 - les **capacités** (`coordinates`, `individual_counts`, `species_names`,
-  `protection`, `event_dates`, `sensitive`) ;
+  `protection`, `event_dates`, `sensitive`, `category`) ;
 - comment chaque colonne se mappe sur la notion métier (espèce, date, effectif,
   lat/lon, département, région).
 

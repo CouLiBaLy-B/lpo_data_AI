@@ -26,6 +26,8 @@ GROUP_BY = (
     "department",
     "region",
     "species",
+    # Dimension de l'extrait réel : « zone reglementaire » vs « Espece ».
+    "category",
     "grid",
     "species_month",
     "species_year",

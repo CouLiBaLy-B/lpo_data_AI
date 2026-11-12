@@ -39,6 +39,7 @@ Capability = Literal[
     "protection",
     "sensitivity",
     "structure",
+    "category",
 ]
 
 
@@ -61,6 +62,8 @@ class SchemaProfile:
     protection: str | None = None
     sensitive: str | None = None
     structure: str | None = None
+    #: nature de la zone (« zone reglementaire », « Espece ») quand elle existe.
+    category: str | None = None
     id_column: str | None = None
     #: ce que compte une ligne, au pluriel. « observations » pour une table
     #: d'observations ; « enregistrements » pour des zones (l'extrait réel), où
@@ -94,6 +97,8 @@ class SchemaProfile:
             caps.add("sensitivity")
         if self.structure:
             caps.add("structure")
+        if self.category:
+            caps.add("category")
         return caps
 
     @property
@@ -176,6 +181,7 @@ SENSITIVE_AREAS = SchemaProfile(
     protection=None,
     sensitive=None,
     structure="structure",
+    category="category",
     id_column="id",
     records_label="enregistrements",
     notes=[

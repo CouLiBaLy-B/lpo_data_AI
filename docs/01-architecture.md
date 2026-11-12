@@ -302,7 +302,8 @@ provenance.
 ```
 1. Question ─► intent.py
       heuristique déterministe (défaut) ou LLM en sortie structurée
-      → {kind, species[], start/end, department/region, metric, granularity}
+      → {kind, species[], start/end, department/region, metric, granularity,
+         rank_by}  (axe d'un classement : species | department | region | category)
       → hors périmètre détecté → kind = "unknown"
 
 2. Contexte (une fois par assistant)
@@ -312,7 +313,8 @@ provenance.
 
 3. Appels MCP (selon kind)
       trend      → aggregate_observations(group_by=year|month, metric, filtres)
-      ranking    → aggregate_observations(group_by=species|department, limit=10)
+      ranking    → aggregate_observations(group_by=rank_by, limit=10)
+                   rank_by = species (défaut) | department | region | category
       map        → aggregate_observations(group_by=grid, ...)
       comparison → aggregate_observations(group_by=species_month) puis agrégation
                    par libellé en séries distinctes
@@ -323,6 +325,9 @@ provenance.
       état vide explicite si capacité manquante ou résultat nul
 
 5. templates.py : modèle de vue → surface A2UI (createSurface)
+      entêtes de tableau = structure, donc calculés ici (`table_columns`)
+      à partir de l'unité MCP (« enregistrements ») et de l'axe de classement ;
+      les valeurs, elles, restent dans le dataModel
 
 6. validation.py : schéma + catalogue + séquences + contrat LPO
       échec → réponse texte seule, degraded = true

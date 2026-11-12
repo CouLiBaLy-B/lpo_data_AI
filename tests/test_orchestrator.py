@@ -226,3 +226,59 @@ def test_repository_profile_counts_records_not_observations(assistant_for_repo):
     assert turn.kind == "trend"
     assert "enregistrements" in turn.text
     assert "observations au total" not in turn.text
+
+
+def test_zone_count_question_is_answered_with_mcp_numbers(assistant_for_repo):
+    """« Combien de zones en Haute-Savoie ? » : 28 lignes dans l'extrait.
+
+    Avant l'axe de classement, cette question tombait en état vide alors que la
+    donnée existait : le classement était câblé sur les espèces.
+    """
+    turn = ask(assistant_for_repo, "Combien de zones en Haute-Savoie ?")
+    assert turn.kind == "ranking"
+    assert turn.validation["ok"] is True
+    assert "28 enregistrements" in turn.text
+    assert "Haute-Savoie" in turn.text
+    # Les chiffres viennent bien d'un agrégat par département.
+    aggregate = [e for e in turn.trace if e.tool == "aggregate_observations"]
+    assert aggregate and aggregate[0].arguments["group_by"] == "department"
+    table = next(
+        c for c in turn.messages[0]["createSurface"]["components"] if c.get("id") == "table"
+    )
+    assert [c["label"] for c in table["columns"]][:3] == [
+        "#",
+        "Département",
+        "Enregistrements",
+    ]
+
+
+def test_category_ranking_lists_zone_types(assistant_for_repo):
+    turn = ask(assistant_for_repo, "Classement des zones par catégorie")
+    assert turn.kind == "ranking"
+    assert "131 enregistrements" in turn.text
+    assert "zone reglementaire" in turn.text
+    table = next(
+        c for c in turn.messages[0]["createSurface"]["components"] if c.get("id") == "table"
+    )
+    assert [c["label"] for c in table["columns"]][1] == "Catégorie"
+
+
+def test_species_ranking_keeps_its_own_axis(assistant_for_repo):
+    turn = ask(assistant_for_repo, "Top 10 des espèces")
+    assert turn.kind == "ranking"
+    assert "Espèce #10" in turn.text
+    table = next(
+        c for c in turn.messages[0]["createSurface"]["components"] if c.get("id") == "table"
+    )
+    assert [c["label"] for c in table["columns"]][1] == "Espèce"
+
+
+def test_repository_trend_does_not_claim_species(assistant_for_repo):
+    """Sans espèce nommée, le texte ne doit pas dire « toutes espèces »."""
+    turn = ask(assistant_for_repo, "Évolution du nombre de zones par an")
+    assert "toutes espèces" not in turn.text
+    table = next(
+        c for c in turn.messages[0]["createSurface"]["components"] if c.get("id") == "table"
+    )
+    assert {c["key"] for c in table["columns"]} >= {"period", "value", "delta"}
+    assert next(c for c in table["columns"] if c["key"] == "value")["label"] == "Enregistrements"
