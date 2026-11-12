@@ -204,8 +204,11 @@ Afficher le prompt système et les exemples few-shot utilisés par l'agent :
 python -m orchestrator --prompt
 ```
 
-La CI (`.github/workflows/python-app.yml`) exécute `ruff check .` puis
-`pytest` sur Python 3.11, sans clé LLM ni base externe.
+Le workflow CI proposé (`docs/ci/python-app.yml`) exécute `ruff check .` puis
+`pytest` sur Python 3.11, sans clé LLM ni base externe. Il n'a pas pu être
+installé automatiquement (permission `workflows` manquante sur le jeton de
+push) : voir `docs/ci/README.md`, qui documente aussi les deux défauts du
+workflow actuel (Python 3.10 et affichage d'une clé API dans les journaux).
 
 Couverture : garde-fous SQL, confidentialité (floutage), contrat des outils MCP,
 serveur MCP réel en `stdio`, client MCP de production sur transport réel,
