@@ -1,0 +1,814 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lpo-data-ai.example/a2ui/catalogs/lpo/v1/catalog.json",
+  "protocolVersion": "1.0",
+  "title": "Catalogue LPO Data AI",
+  "description": "Catalogue A2UI v1.0 restreint pour l'analyse des données naturalistes LPO : composants de base (Text, Row, Column, List, Card, Button, Divider) et composants métier (KpiCard, LineChart, BarChart, MapChart, DataTable, Notice, SelectField). L'accessibilité est portée par le renderer (aria-labels dérivés des contenus) et par les libellés explicites des composants ; les directives @accessibility/@checks ne sont pas utilisées car le SDK v1.0 ne les accepte pas dans les catalogues JSON chargés à chaud.",
+  "catalogId": "https://lpo-data-ai.example/a2ui/catalogs/lpo/v1/catalog.json",
+  "instructions": "## Règles d'usage du catalogue LPO\n\n1. **Jamais de chiffre inventé.** Toute valeur numérique affichée (KPI, point de\n   courbe, barre, ligne de tableau, compteur de carte) doit être une liaison\n   `{\"@path\": \"/...\"}` vers le data model, et le data model doit être construit\n   **uniquement** à partir de résultats d'outils MCP.\n2. **Séparation structure / données.** Envoyer la structure (`createSurface` ou\n   `updateComponents`) une seule fois, puis ne mettre à jour que le data model\n   (`updateDataModel`). Ne jamais recréer la surface pour un simple changement de\n   filtre.\n3. **Choix de visualisation.** Tendance temporelle → `LineChart` (+ `KpiCard` de\n   synthèse). Classement / top N → `BarChart` horizontal ou `DataTable`.\n   Répartition spatiale → `MapChart` (points géolocalisés). Fiche espèce → `Card`\n   + `DataTable` + `Notice`.\n4. **État vide explicite.** Si un outil renvoie 0 ligne, une capacité absente\n   (ex. pas de coordonnées) ou un avertissement, afficher un `Notice` avec un\n   message explicite et ne pas produire de graphique trompeur.\n5. **Données sensibles.** Quand `privacyMode` vaut `blurred` ou `department`, le\n   `Notice` correspondant doit rester visible ; ne jamais afficher de coordonnée\n   exacte d'une espèce sensible.\n6. **Repli texte.** Toujours accompagner la surface d'un résumé texte (2-4\n   phrases) pour les clients sans renderer A2UI.\n7. **Interactions.** Les filtres utilisent `SelectField` avec une `action`\n   (`event.name` = `set_filter`) : l'agent reçoit l'action, rappelle l'outil MCP\n   et émet un `updateDataModel` sur la surface existante.\n",
+  "components": {
+    "Text": {
+      "type": "object",
+      "description": "Bloc de texte. Le markdown simple est autorisé (sans HTML).",
+      "properties": {
+        "component": {
+          "const": "Text"
+        },
+        "text": {
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "Contenu textuel à afficher."
+        },
+        "variant": {
+          "type": "string",
+          "enum": [
+            "caption",
+            "body"
+          ],
+          "default": "body",
+          "description": "Indice de style : caption (petit texte) ou body."
+        }
+      },
+      "required": [
+        "component",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "Column": {
+      "type": "object",
+      "description": "Conteneur vertical.",
+      "properties": {
+        "component": {
+          "const": "Column"
+        },
+        "children": {
+          "$ref": "common_types.json#/$defs/ChildList"
+        },
+        "justify": {
+          "type": "string",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "spaceBetween",
+            "spaceAround",
+            "spaceEvenly",
+            "stretch"
+          ],
+          "default": "start"
+        },
+        "align": {
+          "type": "string",
+          "enum": [
+            "center",
+            "end",
+            "start",
+            "stretch"
+          ],
+          "default": "stretch"
+        }
+      },
+      "required": [
+        "component",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "Row": {
+      "type": "object",
+      "description": "Conteneur horizontal.",
+      "properties": {
+        "component": {
+          "const": "Row"
+        },
+        "children": {
+          "$ref": "common_types.json#/$defs/ChildList"
+        },
+        "justify": {
+          "type": "string",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "spaceBetween",
+            "spaceAround",
+            "spaceEvenly",
+            "stretch"
+          ],
+          "default": "start"
+        },
+        "align": {
+          "type": "string",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "stretch"
+          ],
+          "default": "stretch"
+        }
+      },
+      "required": [
+        "component",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "List": {
+      "type": "object",
+      "description": "Liste d'enfants, statique ou générée depuis un tableau du data model.",
+      "properties": {
+        "component": {
+          "const": "List"
+        },
+        "children": {
+          "$ref": "common_types.json#/$defs/ChildList"
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "vertical",
+            "horizontal"
+          ],
+          "default": "vertical"
+        },
+        "align": {
+          "type": "string",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "stretch"
+          ],
+          "default": "stretch"
+        }
+      },
+      "required": [
+        "component",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "Card": {
+      "type": "object",
+      "description": "Carte contenant un unique enfant.",
+      "properties": {
+        "component": {
+          "const": "Card"
+        },
+        "child": {
+          "$ref": "common_types.json#/$defs/Child"
+        }
+      },
+      "required": [
+        "component",
+        "child"
+      ],
+      "additionalProperties": false
+    },
+    "Button": {
+      "type": "object",
+      "description": "Bouton déclenchant une action agent (event) ou une fonction.",
+      "properties": {
+        "component": {
+          "const": "Button"
+        },
+        "child": {
+          "$ref": "common_types.json#/$defs/Child"
+        },
+        "variant": {
+          "type": "string",
+          "enum": [
+            "default",
+            "primary",
+            "borderless"
+          ],
+          "default": "default"
+        },
+        "action": {
+          "$ref": "common_types.json#/$defs/Action"
+        }
+      },
+      "required": [
+        "component",
+        "child",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "Divider": {
+      "type": "object",
+      "description": "Séparateur horizontal ou vertical.",
+      "properties": {
+        "component": {
+          "const": "Divider"
+        },
+        "axis": {
+          "type": "string",
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "default": "horizontal"
+        }
+      },
+      "required": [
+        "component"
+      ],
+      "additionalProperties": false
+    },
+    "KpiCard": {
+      "type": "object",
+      "description": "Indicateur de synthèse : une valeur déjà formatée et son libellé.",
+      "properties": {
+        "component": {
+          "const": "KpiCard"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "Libellé court de l'indicateur."
+        },
+        "value": {
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "Valeur déjà formatée (ex. '1 284')."
+        },
+        "hint": {
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "Précision secondaire (unité, période, méthode)."
+        },
+        "trend": {
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "Évolution courte (ex. '+12 % vs 2024')."
+        },
+        "tone": {
+          "$ref": "#/$defs/Tone",
+          "description": "Nuance visuelle de la carte."
+        }
+      },
+      "required": [
+        "component",
+        "label",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "LineChart": {
+      "type": "object",
+      "description": "Série(s) temporelle(s) en courbe. Les séries sont liées au data model pour que les mises à jour n'envoient que les données.",
+      "properties": {
+        "component": {
+          "const": "LineChart"
+        },
+        "title": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "series": {
+          "oneOf": [
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ChartSeries"
+              }
+            }
+          ],
+          "description": "Liaison vers un tableau de séries, ou tableau littéral de séries."
+        },
+        "xLabel": {
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "Titre de l'axe des abscisses."
+        },
+        "yLabel": {
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "Titre de l'axe des ordonnées."
+        },
+        "valueFormat": {
+          "type": "string",
+          "enum": [
+            "integer",
+            "decimal"
+          ],
+          "default": "integer"
+        },
+        "height": {
+          "type": "number",
+          "description": "Hauteur du graphique en pixels."
+        },
+        "emptyMessage": {
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "Message affiché si les séries sont vides."
+        }
+      },
+      "required": [
+        "component",
+        "title",
+        "series"
+      ],
+      "additionalProperties": false
+    },
+    "BarChart": {
+      "type": "object",
+      "description": "Classement en barres (horizontal par défaut, adapté aux libellés d'espèces).",
+      "properties": {
+        "component": {
+          "const": "BarChart"
+        },
+        "title": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "items": {
+          "oneOf": [
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/BarItem"
+              }
+            }
+          ],
+          "description": "Liaison vers un tableau d'éléments {label, value}."
+        },
+        "valueLabel": {
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "Nom de la grandeur mesurée."
+        },
+        "orientation": {
+          "type": "string",
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "default": "horizontal"
+        },
+        "maxItems": {
+          "type": "number",
+          "description": "Nombre maximum de barres affichées."
+        },
+        "emptyMessage": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": [
+        "component",
+        "title",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "MapChart": {
+      "type": "object",
+      "description": "Carte de points géolocalisés. Les coordonnées proviennent exclusivement du data model (donc du serveur MCP), éventuellement floutées.",
+      "properties": {
+        "component": {
+          "const": "MapChart"
+        },
+        "title": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "points": {
+          "oneOf": [
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/MapPoint"
+              }
+            }
+          ],
+          "description": "Liaison vers un tableau de points {lat, lon, label, value}."
+        },
+        "legend": {
+          "oneOf": [
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/LegendItem"
+              }
+            }
+          ],
+          "description": "Légende associée (par ex. classes de densité)."
+        },
+        "privacyMode": {
+          "$ref": "#/$defs/PrivacyMode",
+          "description": "Niveau de précision spatiale effectivement appliqué par le serveur."
+        },
+        "height": {
+          "type": "number"
+        },
+        "emptyMessage": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": [
+        "component",
+        "title",
+        "points"
+      ],
+      "additionalProperties": false
+    },
+    "DataTable": {
+      "type": "object",
+      "description": "Tableau de données à colonnes fixes et lignes liées au data model.",
+      "properties": {
+        "component": {
+          "const": "DataTable"
+        },
+        "title": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TableColumn"
+          },
+          "description": "Colonnes du tableau (structure, non liée)."
+        },
+        "rows": {
+          "oneOf": [
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          ],
+          "description": "Liaison vers un tableau d'enregistrements."
+        },
+        "caption": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "maxRows": {
+          "type": "number",
+          "description": "Nombre de lignes affichées sans défilement."
+        },
+        "emptyMessage": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": [
+        "component",
+        "columns",
+        "rows"
+      ],
+      "additionalProperties": false
+    },
+    "Notice": {
+      "type": "object",
+      "description": "Message d'information, d'avertissement ou d'erreur. Sert aussi d'état vide explicite.",
+      "properties": {
+        "component": {
+          "const": "Notice"
+        },
+        "tone": {
+          "$ref": "#/$defs/NoticeTone",
+          "description": "Ton du message (détermine la couleur et l'icône)."
+        },
+        "title": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "message": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": [
+        "component",
+        "tone",
+        "message"
+      ],
+      "additionalProperties": false
+    },
+    "SelectField": {
+      "type": "object",
+      "description": "Sélecteur lié au data model. Tout changement émet l'action fournie vers l'agent, qui met à jour la surface existante.",
+      "properties": {
+        "component": {
+          "const": "SelectField"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "value": {
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "Valeur sélectionnée (liaison conseillée)."
+        },
+        "options": {
+          "oneOf": [
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/SelectOption"
+              }
+            }
+          ],
+          "description": "Options proposées : tableau littéral ou liaison vers le data model (pour rafraîchir les choix sans renvoyer la structure)."
+        },
+        "action": {
+          "$ref": "common_types.json#/$defs/Action"
+        },
+        "placeholder": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": [
+        "component",
+        "label",
+        "value",
+        "options",
+        "action"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "functions": {},
+  "$defs": {
+    "anyComponent": {
+      "oneOf": [
+        {
+          "$ref": "#/components/Text"
+        },
+        {
+          "$ref": "#/components/Column"
+        },
+        {
+          "$ref": "#/components/Row"
+        },
+        {
+          "$ref": "#/components/List"
+        },
+        {
+          "$ref": "#/components/Card"
+        },
+        {
+          "$ref": "#/components/Button"
+        },
+        {
+          "$ref": "#/components/Divider"
+        },
+        {
+          "$ref": "#/components/KpiCard"
+        },
+        {
+          "$ref": "#/components/LineChart"
+        },
+        {
+          "$ref": "#/components/BarChart"
+        },
+        {
+          "$ref": "#/components/MapChart"
+        },
+        {
+          "$ref": "#/components/DataTable"
+        },
+        {
+          "$ref": "#/components/Notice"
+        },
+        {
+          "$ref": "#/components/SelectField"
+        }
+      ],
+      "discriminator": {
+        "propertyName": "component"
+      }
+    },
+    "anyFunction": {
+      "not": {},
+      "description": "Ce catalogue n'expose aucune fonction d'expression : tout est calculé côté serveur et transmis par le data model."
+    },
+    "ChartPoint": {
+      "type": "object",
+      "description": "Point d'une série temporelle.",
+      "properties": {
+        "x": {
+          "type": "string",
+          "description": "Étiquette d'abscisse (année, mois…)."
+        },
+        "y": {
+          "type": "number",
+          "description": "Valeur en ordonnée."
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "ChartSeries": {
+      "type": "object",
+      "description": "Série nommée d'un LineChart.",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "description": "Couleur hexadécimale optionnelle."
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ChartPoint"
+          }
+        }
+      },
+      "required": [
+        "label",
+        "points"
+      ],
+      "additionalProperties": false
+    },
+    "BarItem": {
+      "type": "object",
+      "description": "Barre d'un classement.",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "type": "number"
+        },
+        "hint": {
+          "type": "string",
+          "description": "Précision affichée à droite de la barre."
+        }
+      },
+      "required": [
+        "label",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "MapPoint": {
+      "type": "object",
+      "description": "Point géolocalisé d'un MapChart.",
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "type": "number",
+          "description": "Effectif ou nombre d'observations associé."
+        },
+        "sensitive": {
+          "type": "boolean",
+          "description": "Vrai si la localisation a été floutée."
+        }
+      },
+      "required": [
+        "lat",
+        "lon"
+      ],
+      "additionalProperties": false
+    },
+    "LegendItem": {
+      "type": "object",
+      "description": "Entrée de légende d'une carte.",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "tone": {
+          "type": "string",
+          "enum": [
+            "neutral",
+            "positive",
+            "warning"
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "TableColumn": {
+      "type": "object",
+      "description": "Définition d'une colonne de DataTable.",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Clé de la ligne à afficher."
+        },
+        "label": {
+          "type": "string"
+        },
+        "align": {
+          "type": "string",
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ],
+          "default": "left"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "text",
+            "integer",
+            "decimal",
+            "percent",
+            "date"
+          ],
+          "default": "text"
+        }
+      },
+      "required": [
+        "key",
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "SelectOption": {
+      "type": "object",
+      "description": "Option d'un SelectField.",
+      "properties": {
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "Tone": {
+      "description": "Nuance visuelle : littérale (enum) ou liée au data model.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "neutral",
+            "positive",
+            "warning"
+          ]
+        },
+        {
+          "$ref": "common_types.json#/$defs/DataBinding"
+        }
+      ]
+    },
+    "NoticeTone": {
+      "description": "Ton d'un message : littéral (enum) ou lié au data model.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "info",
+            "success",
+            "warning",
+            "error"
+          ]
+        },
+        {
+          "$ref": "common_types.json#/$defs/DataBinding"
+        }
+      ]
+    },
+    "PrivacyMode": {
+      "description": "Niveau de précision spatiale : littéral ou lié (le serveur décide).",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "exact",
+            "blurred",
+            "department"
+          ]
+        },
+        {
+          "$ref": "common_types.json#/$defs/DataBinding"
+        }
+      ]
+    }
+  }
+}

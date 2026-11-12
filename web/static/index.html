@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LPO Data AI — réponses graphiques A2UI</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">🦅</span>
+        <div>
+          <h1>LPO Data AI</h1>
+          <p>Posez une question sur les observations naturalistes — la réponse est une interface, pas un mur de texte.</p>
+        </div>
+      </div>
+      <div class="badges">
+        <span class="badge" id="protocol-badge">A2UI v1.0</span>
+        <span class="badge" id="mcp-badge">MCP lpo-data</span>
+        <span class="badge badge-demo" id="demo-badge" hidden>Démo</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="chat" aria-label="Conversation">
+        <div class="chat-scroll" id="chat-log"></div>
+
+        <div class="examples" id="examples" aria-label="Questions d'exemple">
+          <button type="button" data-question="Évolution des observations de Milan royal sur les 10 dernières années ?">Tendance · Milan royal</button>
+          <button type="button" data-question="Top 10 des espèces observées dans le Finistère en 2025 ?">Classement · Finistère 2025</button>
+          <button type="button" data-question="Carte des observations de Busard cendré ce printemps ?">Carte · Busard cendré</button>
+          <button type="button" data-question="Compare Milan royal et Busard cendré par mois.">Comparaison · 2 espèces</button>
+          <button type="button" data-question="Fiche espèce du Héron cendré">Fiche espèce</button>
+        </div>
+
+        <form class="composer" id="composer">
+          <label class="sr-only" for="question">Votre question</label>
+          <input
+            id="question"
+            name="question"
+            type="text"
+            autocomplete="off"
+            maxlength="500"
+            placeholder="Ex. : évolution des observations de Milan royal dans le Finistère depuis 2016 ?"
+            required
+          />
+          <button type="submit" id="send">Analyser</button>
+          <button type="button" class="ghost" id="text-only" aria-pressed="false" title="Afficher uniquement le résumé texte (repli sans renderer A2UI)">
+            Texte seul
+          </button>
+        </form>
+        <p class="hint">
+          L'agent interroge le serveur MCP <code>lpo-data</code> (lecture seule), puis valide chaque
+          message A2UI avant de l'afficher. Aucun chiffre n'est inventé : les valeurs viennent des
+          résultats d'outils.
+        </p>
+      </section>
+
+      <section class="surface-panel" aria-label="Réponse graphique A2UI">
+        <div class="surface-head">
+          <h2>Réponse</h2>
+          <span class="surface-meta" id="surface-meta">aucune surface</span>
+        </div>
+        <div class="surface-scroll">
+          <div id="surface-host" class="surface-host">
+            <div class="welcome">
+              <h3>Une question, une interface</h3>
+              <p>
+                Les surfaces A2UI sont composées de composants du catalogue LPO
+                (<code>LineChart</code>, <code>BarChart</code>, <code>MapChart</code>,
+                <code>KpiCard</code>, <code>DataTable</code>, <code>Notice</code>,
+                <code>SelectField</code>) : pas de HTML généré, seulement des messages JSON.
+              </p>
+              <p>
+                Les filtres de la surface renvoient une <em>action</em> à l'agent, qui
+                rappelle le serveur MCP puis met à jour le <em>data model</em> — la structure
+                de l'interface n'est pas recréée.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <template id="trace-template">
+      <details class="trace">
+        <summary></summary>
+        <ol class="trace-list"></ol>
+      </details>
+    </template>
+
+    <script type="module" src="/static/app.js"></script>
+  </body>
+</html>

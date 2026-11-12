@@ -1,0 +1,4628 @@
+{
+  "turns": [
+    {
+      "index": 1,
+      "question": "Évolution des observations de Milan royal sur les 10 dernières années ?",
+      "action": null,
+      "kind": "trend",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-1",
+      "text": "Milan royal : 769 observations au total (2017–2026, France entière). Maximum en 2026 avec 94 observations. Évolution 2017 → 2026 : +29 %.",
+      "messages": [
+        {
+          "version": "1.0",
+          "createSurface": {
+            "surfaceId": "lpo-exemple-bout-en-bout-1",
+            "catalogId": "https://lpo-data-ai.example/a2ui/catalogs/lpo/v1/catalog.json",
+            "sendDataModel": true,
+            "components": [
+              {
+                "id": "root",
+                "component": "Column",
+                "children": [
+                  "header",
+                  "kpis",
+                  "main_card",
+                  "table_card",
+                  "notice_list",
+                  "filters_card",
+                  "footer"
+                ]
+              },
+              {
+                "id": "header",
+                "component": "Card",
+                "child": "header_col"
+              },
+              {
+                "id": "header_col",
+                "component": "Column",
+                "children": [
+                  "header_title",
+                  "header_subtitle"
+                ]
+              },
+              {
+                "id": "header_title",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/title"
+                }
+              },
+              {
+                "id": "header_subtitle",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/subtitle"
+                },
+                "variant": "caption"
+              },
+              {
+                "id": "kpis",
+                "component": "List",
+                "direction": "horizontal",
+                "children": {
+                  "path": "/kpis",
+                  "componentId": "kpi_tpl"
+                }
+              },
+              {
+                "id": "kpi_tpl",
+                "component": "KpiCard",
+                "label": {
+                  "@path": "label"
+                },
+                "value": {
+                  "@path": "value"
+                },
+                "hint": {
+                  "@path": "hint"
+                },
+                "trend": {
+                  "@path": "trend"
+                },
+                "tone": {
+                  "@path": "tone"
+                }
+              },
+              {
+                "id": "main_card",
+                "component": "Card",
+                "child": "chart"
+              },
+              {
+                "id": "chart",
+                "component": "LineChart",
+                "title": {
+                  "@path": "/chart/title"
+                },
+                "series": {
+                  "@path": "/chart/series"
+                },
+                "xLabel": {
+                  "@path": "/chart/xLabel"
+                },
+                "yLabel": {
+                  "@path": "/chart/yLabel"
+                },
+                "valueFormat": "integer",
+                "height": 320,
+                "emptyMessage": {
+                  "@path": "/chart/emptyMessage"
+                }
+              },
+              {
+                "id": "table_card",
+                "component": "Card",
+                "child": "table"
+              },
+              {
+                "id": "table",
+                "component": "DataTable",
+                "title": {
+                  "@path": "/table/title"
+                },
+                "caption": {
+                  "@path": "/table/caption"
+                },
+                "columns": [
+                  {
+                    "key": "period",
+                    "label": "Période",
+                    "align": "left"
+                  },
+                  {
+                    "key": "value",
+                    "label": "Observations",
+                    "align": "right",
+                    "format": "integer"
+                  },
+                  {
+                    "key": "delta",
+                    "label": "Variation",
+                    "align": "right",
+                    "format": "percent"
+                  }
+                ],
+                "rows": {
+                  "@path": "/table/rows"
+                },
+                "maxRows": 12,
+                "emptyMessage": {
+                  "@path": "/table/emptyMessage"
+                }
+              },
+              {
+                "id": "notice_list",
+                "component": "List",
+                "children": {
+                  "path": "/notices",
+                  "componentId": "notice_tpl"
+                }
+              },
+              {
+                "id": "notice_tpl",
+                "component": "Notice",
+                "tone": {
+                  "@path": "tone"
+                },
+                "title": {
+                  "@path": "title"
+                },
+                "message": {
+                  "@path": "message"
+                }
+              },
+              {
+                "id": "filters_card",
+                "component": "Card",
+                "child": "filters_col"
+              },
+              {
+                "id": "filters_col",
+                "component": "Column",
+                "children": [
+                  "filters_title",
+                  "filters_row"
+                ]
+              },
+              {
+                "id": "filters_title",
+                "component": "Text",
+                "text": "Affiner",
+                "variant": "caption"
+              },
+              {
+                "id": "filters_row",
+                "component": "Row",
+                "children": [
+                  "filter_species",
+                  "filter_period",
+                  "filter_area"
+                ]
+              },
+              {
+                "id": "filter_species",
+                "component": "SelectField",
+                "label": "Espèce",
+                "value": {
+                  "@path": "/filters/species/value"
+                },
+                "options": {
+                  "@path": "/filters/species/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Espèce modifié",
+                    "context": {
+                      "filter": "species",
+                      "value": {
+                        "@path": "/filters/species/value"
+                      },
+                      "surfaceKind": "trend"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "filter_period",
+                "component": "SelectField",
+                "label": "Période",
+                "value": {
+                  "@path": "/filters/period/value"
+                },
+                "options": {
+                  "@path": "/filters/period/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Période modifié",
+                    "context": {
+                      "filter": "period",
+                      "value": {
+                        "@path": "/filters/period/value"
+                      },
+                      "surfaceKind": "trend"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "filter_area",
+                "component": "SelectField",
+                "label": "Zone",
+                "value": {
+                  "@path": "/filters/area/value"
+                },
+                "options": {
+                  "@path": "/filters/area/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Zone modifié",
+                    "context": {
+                      "filter": "area",
+                      "value": {
+                        "@path": "/filters/area/value"
+                      },
+                      "surfaceKind": "trend"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "footer",
+                "component": "Text",
+                "text": {
+                  "@path": "/footer/source"
+                },
+                "variant": "caption"
+              }
+            ],
+            "dataModel": {
+              "header": {
+                "title": "Évolution des observations — Milan royal",
+                "subtitle": "2017–2026 · France entière"
+              },
+              "kpis": [
+                {
+                  "label": "Observations cumulées",
+                  "value": "769",
+                  "hint": "2017–2026",
+                  "tone": "neutral"
+                },
+                {
+                  "label": "Pic",
+                  "value": "2026",
+                  "hint": "94 observations",
+                  "tone": "neutral"
+                },
+                {
+                  "label": "Évolution 2017 → 2026",
+                  "value": "+29 %",
+                  "hint": "73 → 94",
+                  "tone": "positive"
+                }
+              ],
+              "chart": {
+                "title": "Observations par année",
+                "series": [
+                  {
+                    "label": "Milan royal",
+                    "points": [
+                      {
+                        "x": "2017",
+                        "y": 73.0
+                      },
+                      {
+                        "x": "2018",
+                        "y": 86.0
+                      },
+                      {
+                        "x": "2019",
+                        "y": 74.0
+                      },
+                      {
+                        "x": "2020",
+                        "y": 51.0
+                      },
+                      {
+                        "x": "2021",
+                        "y": 80.0
+                      },
+                      {
+                        "x": "2022",
+                        "y": 67.0
+                      },
+                      {
+                        "x": "2023",
+                        "y": 88.0
+                      },
+                      {
+                        "x": "2024",
+                        "y": 77.0
+                      },
+                      {
+                        "x": "2025",
+                        "y": 79.0
+                      },
+                      {
+                        "x": "2026",
+                        "y": 94.0
+                      }
+                    ]
+                  }
+                ],
+                "items": [],
+                "points": [],
+                "legend": [],
+                "xLabel": "Année",
+                "yLabel": "Observations",
+                "valueLabel": "",
+                "privacyMode": "exact",
+                "emptyMessage": "Aucune donnée sur la période."
+              },
+              "table": {
+                "title": "Détail par période",
+                "caption": "Observations et variation par rapport à la période précédente.",
+                "rows": [
+                  {
+                    "period": "2017",
+                    "value": 73.0,
+                    "delta": null
+                  },
+                  {
+                    "period": "2018",
+                    "value": 86.0,
+                    "delta": 0.1780821917808219
+                  },
+                  {
+                    "period": "2019",
+                    "value": 74.0,
+                    "delta": -0.13953488372093023
+                  },
+                  {
+                    "period": "2020",
+                    "value": 51.0,
+                    "delta": -0.3108108108108108
+                  },
+                  {
+                    "period": "2021",
+                    "value": 80.0,
+                    "delta": 0.5686274509803921
+                  },
+                  {
+                    "period": "2022",
+                    "value": 67.0,
+                    "delta": -0.1625
+                  },
+                  {
+                    "period": "2023",
+                    "value": 88.0,
+                    "delta": 0.31343283582089554
+                  },
+                  {
+                    "period": "2024",
+                    "value": 77.0,
+                    "delta": -0.125
+                  },
+                  {
+                    "period": "2025",
+                    "value": 79.0,
+                    "delta": 0.025974025974025976
+                  },
+                  {
+                    "period": "2026",
+                    "value": 94.0,
+                    "delta": 0.189873417721519
+                  }
+                ],
+                "emptyMessage": "Aucune période à afficher."
+              },
+              "notices": [
+                {
+                  "tone": "warning",
+                  "title": "Jeu de démonstration",
+                  "message": "Jeu de démonstration synthétique (observations naturalistes) — aucune valeur écologique réelle. Les chiffres servent à valider la chaîne MCP → A2UI, pas à documenter la biodiversité."
+                }
+              ],
+              "filters": {
+                "species": {
+                  "value": "Milan royal",
+                  "options": [
+                    {
+                      "label": "Toutes les espèces",
+                      "value": ""
+                    },
+                    {
+                      "label": "Busard cendré",
+                      "value": "Busard cendré"
+                    },
+                    {
+                      "label": "Buse variable",
+                      "value": "Buse variable"
+                    },
+                    {
+                      "label": "Chevreuil européen",
+                      "value": "Chevreuil européen"
+                    },
+                    {
+                      "label": "Chouette effraie",
+                      "value": "Chouette effraie"
+                    },
+                    {
+                      "label": "Cigogne blanche",
+                      "value": "Cigogne blanche"
+                    },
+                    {
+                      "label": "Crapaud commun",
+                      "value": "Crapaud commun"
+                    },
+                    {
+                      "label": "Faucon crécerelle",
+                      "value": "Faucon crécerelle"
+                    },
+                    {
+                      "label": "Héron cendré",
+                      "value": "Héron cendré"
+                    },
+                    {
+                      "label": "Lièvre d'Europe",
+                      "value": "Lièvre d'Europe"
+                    },
+                    {
+                      "label": "Martin-pêcheur d'Europe",
+                      "value": "Martin-pêcheur d'Europe"
+                    },
+                    {
+                      "label": "Milan royal",
+                      "value": "Milan royal"
+                    },
+                    {
+                      "label": "Renard roux",
+                      "value": "Renard roux"
+                    },
+                    {
+                      "label": "Sanglier",
+                      "value": "Sanglier"
+                    },
+                    {
+                      "label": "Triton palmé",
+                      "value": "Triton palmé"
+                    }
+                  ]
+                },
+                "period": {
+                  "value": "10y",
+                  "options": [
+                    {
+                      "label": "10 dernières années",
+                      "value": "10y"
+                    },
+                    {
+                      "label": "12 derniers mois",
+                      "value": "12m"
+                    },
+                    {
+                      "label": "Cette année",
+                      "value": "this_year"
+                    },
+                    {
+                      "label": "Année dernière",
+                      "value": "last_year"
+                    },
+                    {
+                      "label": "Ce printemps",
+                      "value": "spring"
+                    },
+                    {
+                      "label": "Toute la période",
+                      "value": "all"
+                    }
+                  ]
+                },
+                "area": {
+                  "value": "",
+                  "options": [
+                    {
+                      "label": "Toute la France",
+                      "value": ""
+                    },
+                    {
+                      "label": "Bas-Rhin",
+                      "value": "Bas-Rhin"
+                    },
+                    {
+                      "label": "Bouches-du-Rhône",
+                      "value": "Bouches-du-Rhône"
+                    },
+                    {
+                      "label": "Charente-Maritime",
+                      "value": "Charente-Maritime"
+                    },
+                    {
+                      "label": "Côtes-d'Armor",
+                      "value": "Côtes-d'Armor"
+                    },
+                    {
+                      "label": "Deux-Sèvres",
+                      "value": "Deux-Sèvres"
+                    },
+                    {
+                      "label": "Finistère",
+                      "value": "Finistère"
+                    },
+                    {
+                      "label": "Gironde",
+                      "value": "Gironde"
+                    },
+                    {
+                      "label": "Hérault",
+                      "value": "Hérault"
+                    },
+                    {
+                      "label": "Ille-et-Vilaine",
+                      "value": "Ille-et-Vilaine"
+                    },
+                    {
+                      "label": "Indre-et-Loire",
+                      "value": "Indre-et-Loire"
+                    },
+                    {
+                      "label": "Loire-Atlantique",
+                      "value": "Loire-Atlantique"
+                    },
+                    {
+                      "label": "Loiret",
+                      "value": "Loiret"
+                    },
+                    {
+                      "label": "Morbihan",
+                      "value": "Morbihan"
+                    },
+                    {
+                      "label": "Vendée",
+                      "value": "Vendée"
+                    }
+                  ]
+                }
+              },
+              "species": {},
+              "footer": {
+                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "question": "Top 10 des espèces observées dans le Finistère en 2025 ?",
+      "action": null,
+      "kind": "ranking",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-2",
+      "text": "Sur la zone « Finistère » (année 2025), Milan royal arrive en tête avec 10 observations (10,6 % du total), devant Héron cendré, Faucon crécerelle. Total : 94 observations.",
+      "messages": [
+        {
+          "version": "1.0",
+          "deleteSurface": {
+            "surfaceId": "lpo-exemple-bout-en-bout-1"
+          }
+        },
+        {
+          "version": "1.0",
+          "createSurface": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "catalogId": "https://lpo-data-ai.example/a2ui/catalogs/lpo/v1/catalog.json",
+            "sendDataModel": true,
+            "components": [
+              {
+                "id": "root",
+                "component": "Column",
+                "children": [
+                  "header",
+                  "kpis",
+                  "main_card",
+                  "table_card",
+                  "notice_list",
+                  "filters_card",
+                  "footer"
+                ]
+              },
+              {
+                "id": "header",
+                "component": "Card",
+                "child": "header_col"
+              },
+              {
+                "id": "header_col",
+                "component": "Column",
+                "children": [
+                  "header_title",
+                  "header_subtitle"
+                ]
+              },
+              {
+                "id": "header_title",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/title"
+                }
+              },
+              {
+                "id": "header_subtitle",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/subtitle"
+                },
+                "variant": "caption"
+              },
+              {
+                "id": "kpis",
+                "component": "List",
+                "direction": "horizontal",
+                "children": {
+                  "path": "/kpis",
+                  "componentId": "kpi_tpl"
+                }
+              },
+              {
+                "id": "kpi_tpl",
+                "component": "KpiCard",
+                "label": {
+                  "@path": "label"
+                },
+                "value": {
+                  "@path": "value"
+                },
+                "hint": {
+                  "@path": "hint"
+                },
+                "trend": {
+                  "@path": "trend"
+                },
+                "tone": {
+                  "@path": "tone"
+                }
+              },
+              {
+                "id": "main_card",
+                "component": "Card",
+                "child": "chart"
+              },
+              {
+                "id": "chart",
+                "component": "BarChart",
+                "title": {
+                  "@path": "/chart/title"
+                },
+                "items": {
+                  "@path": "/chart/items"
+                },
+                "valueLabel": {
+                  "@path": "/chart/valueLabel"
+                },
+                "orientation": "horizontal",
+                "maxItems": 10,
+                "emptyMessage": {
+                  "@path": "/chart/emptyMessage"
+                }
+              },
+              {
+                "id": "table_card",
+                "component": "Card",
+                "child": "table"
+              },
+              {
+                "id": "table",
+                "component": "DataTable",
+                "title": {
+                  "@path": "/table/title"
+                },
+                "caption": {
+                  "@path": "/table/caption"
+                },
+                "columns": [
+                  {
+                    "key": "rank",
+                    "label": "#",
+                    "align": "right",
+                    "format": "integer"
+                  },
+                  {
+                    "key": "label",
+                    "label": "Espèce",
+                    "align": "left"
+                  },
+                  {
+                    "key": "value",
+                    "label": "Observations",
+                    "align": "right",
+                    "format": "integer"
+                  },
+                  {
+                    "key": "share",
+                    "label": "Part",
+                    "align": "right",
+                    "format": "percent"
+                  }
+                ],
+                "rows": {
+                  "@path": "/table/rows"
+                },
+                "maxRows": 12,
+                "emptyMessage": {
+                  "@path": "/table/emptyMessage"
+                }
+              },
+              {
+                "id": "notice_list",
+                "component": "List",
+                "children": {
+                  "path": "/notices",
+                  "componentId": "notice_tpl"
+                }
+              },
+              {
+                "id": "notice_tpl",
+                "component": "Notice",
+                "tone": {
+                  "@path": "tone"
+                },
+                "title": {
+                  "@path": "title"
+                },
+                "message": {
+                  "@path": "message"
+                }
+              },
+              {
+                "id": "filters_card",
+                "component": "Card",
+                "child": "filters_col"
+              },
+              {
+                "id": "filters_col",
+                "component": "Column",
+                "children": [
+                  "filters_title",
+                  "filters_row"
+                ]
+              },
+              {
+                "id": "filters_title",
+                "component": "Text",
+                "text": "Affiner",
+                "variant": "caption"
+              },
+              {
+                "id": "filters_row",
+                "component": "Row",
+                "children": [
+                  "filter_species",
+                  "filter_period",
+                  "filter_area"
+                ]
+              },
+              {
+                "id": "filter_species",
+                "component": "SelectField",
+                "label": "Espèce",
+                "value": {
+                  "@path": "/filters/species/value"
+                },
+                "options": {
+                  "@path": "/filters/species/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Espèce modifié",
+                    "context": {
+                      "filter": "species",
+                      "value": {
+                        "@path": "/filters/species/value"
+                      },
+                      "surfaceKind": "ranking"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "filter_period",
+                "component": "SelectField",
+                "label": "Période",
+                "value": {
+                  "@path": "/filters/period/value"
+                },
+                "options": {
+                  "@path": "/filters/period/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Période modifié",
+                    "context": {
+                      "filter": "period",
+                      "value": {
+                        "@path": "/filters/period/value"
+                      },
+                      "surfaceKind": "ranking"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "filter_area",
+                "component": "SelectField",
+                "label": "Zone",
+                "value": {
+                  "@path": "/filters/area/value"
+                },
+                "options": {
+                  "@path": "/filters/area/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Zone modifié",
+                    "context": {
+                      "filter": "area",
+                      "value": {
+                        "@path": "/filters/area/value"
+                      },
+                      "surfaceKind": "ranking"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "footer",
+                "component": "Text",
+                "text": {
+                  "@path": "/footer/source"
+                },
+                "variant": "caption"
+              }
+            ],
+            "dataModel": {
+              "header": {
+                "title": "Top 10 des espèces — Finistère",
+                "subtitle": "année 2025 · Finistère"
+              },
+              "kpis": [
+                {
+                  "label": "Observations (toutes espèces)",
+                  "value": "94",
+                  "hint": "année 2025",
+                  "tone": "neutral"
+                },
+                {
+                  "label": "Espèce en tête",
+                  "value": "Milan royal",
+                  "hint": "10 observations",
+                  "tone": "neutral"
+                },
+                {
+                  "label": "Espèces classées",
+                  "value": "10",
+                  "hint": "sur 10 renvoyées",
+                  "tone": "neutral"
+                }
+              ],
+              "chart": {
+                "title": "Classement par observations",
+                "series": [],
+                "items": [
+                  {
+                    "label": "Milan royal",
+                    "value": 10.0,
+                    "hint": "10,6 %"
+                  },
+                  {
+                    "label": "Héron cendré",
+                    "value": 10.0,
+                    "hint": "10,6 %"
+                  },
+                  {
+                    "label": "Faucon crécerelle",
+                    "value": 10.0,
+                    "hint": "10,6 %"
+                  },
+                  {
+                    "label": "Chevreuil européen",
+                    "value": 10.0,
+                    "hint": "10,6 %"
+                  },
+                  {
+                    "label": "Sanglier",
+                    "value": 9.0,
+                    "hint": "9,6 %"
+                  },
+                  {
+                    "label": "Buse variable",
+                    "value": 9.0,
+                    "hint": "9,6 %"
+                  },
+                  {
+                    "label": "Crapaud commun",
+                    "value": 7.0,
+                    "hint": "7,4 %"
+                  },
+                  {
+                    "label": "Renard roux",
+                    "value": 6.0,
+                    "hint": "6,4 %"
+                  },
+                  {
+                    "label": "Busard cendré",
+                    "value": 6.0,
+                    "hint": "6,4 %"
+                  },
+                  {
+                    "label": "Lièvre d'Europe",
+                    "value": 5.0,
+                    "hint": "5,3 %"
+                  }
+                ],
+                "points": [],
+                "legend": [],
+                "xLabel": "",
+                "yLabel": "",
+                "valueLabel": "Observations",
+                "privacyMode": "exact",
+                "emptyMessage": "Aucune espèce à classer."
+              },
+              "table": {
+                "title": "Détail du classement",
+                "caption": "Part calculée sur le total du périmètre filtré.",
+                "rows": [
+                  {
+                    "rank": 1,
+                    "label": "Milan royal",
+                    "value": 10.0,
+                    "share": 0.10638297872340426
+                  },
+                  {
+                    "rank": 2,
+                    "label": "Héron cendré",
+                    "value": 10.0,
+                    "share": 0.10638297872340426
+                  },
+                  {
+                    "rank": 3,
+                    "label": "Faucon crécerelle",
+                    "value": 10.0,
+                    "share": 0.10638297872340426
+                  },
+                  {
+                    "rank": 4,
+                    "label": "Chevreuil européen",
+                    "value": 10.0,
+                    "share": 0.10638297872340426
+                  },
+                  {
+                    "rank": 5,
+                    "label": "Sanglier",
+                    "value": 9.0,
+                    "share": 0.09574468085106383
+                  },
+                  {
+                    "rank": 6,
+                    "label": "Buse variable",
+                    "value": 9.0,
+                    "share": 0.09574468085106383
+                  },
+                  {
+                    "rank": 7,
+                    "label": "Crapaud commun",
+                    "value": 7.0,
+                    "share": 0.07446808510638298
+                  },
+                  {
+                    "rank": 8,
+                    "label": "Renard roux",
+                    "value": 6.0,
+                    "share": 0.06382978723404255
+                  },
+                  {
+                    "rank": 9,
+                    "label": "Busard cendré",
+                    "value": 6.0,
+                    "share": 0.06382978723404255
+                  },
+                  {
+                    "rank": 10,
+                    "label": "Lièvre d'Europe",
+                    "value": 5.0,
+                    "share": 0.05319148936170213
+                  }
+                ],
+                "emptyMessage": "Aucune ligne."
+              },
+              "notices": [
+                {
+                  "tone": "warning",
+                  "title": "Jeu de démonstration",
+                  "message": "Jeu de démonstration synthétique (observations naturalistes) — aucune valeur écologique réelle. Les chiffres servent à valider la chaîne MCP → A2UI, pas à documenter la biodiversité."
+                },
+                {
+                  "tone": "warning",
+                  "title": "Résultat tronqué",
+                  "message": "Le serveur MCP a atteint sa limite de lignes : la vue montre un sous-ensemble. Affiner la période ou la zone pour voir l'ensemble."
+                }
+              ],
+              "filters": {
+                "species": {
+                  "value": "",
+                  "options": [
+                    {
+                      "label": "Toutes les espèces",
+                      "value": ""
+                    },
+                    {
+                      "label": "Busard cendré",
+                      "value": "Busard cendré"
+                    },
+                    {
+                      "label": "Buse variable",
+                      "value": "Buse variable"
+                    },
+                    {
+                      "label": "Chevreuil européen",
+                      "value": "Chevreuil européen"
+                    },
+                    {
+                      "label": "Chouette effraie",
+                      "value": "Chouette effraie"
+                    },
+                    {
+                      "label": "Cigogne blanche",
+                      "value": "Cigogne blanche"
+                    },
+                    {
+                      "label": "Crapaud commun",
+                      "value": "Crapaud commun"
+                    },
+                    {
+                      "label": "Faucon crécerelle",
+                      "value": "Faucon crécerelle"
+                    },
+                    {
+                      "label": "Héron cendré",
+                      "value": "Héron cendré"
+                    },
+                    {
+                      "label": "Lièvre d'Europe",
+                      "value": "Lièvre d'Europe"
+                    },
+                    {
+                      "label": "Martin-pêcheur d'Europe",
+                      "value": "Martin-pêcheur d'Europe"
+                    },
+                    {
+                      "label": "Milan royal",
+                      "value": "Milan royal"
+                    },
+                    {
+                      "label": "Renard roux",
+                      "value": "Renard roux"
+                    },
+                    {
+                      "label": "Sanglier",
+                      "value": "Sanglier"
+                    },
+                    {
+                      "label": "Triton palmé",
+                      "value": "Triton palmé"
+                    }
+                  ]
+                },
+                "period": {
+                  "value": "custom",
+                  "options": [
+                    {
+                      "label": "10 dernières années",
+                      "value": "10y"
+                    },
+                    {
+                      "label": "12 derniers mois",
+                      "value": "12m"
+                    },
+                    {
+                      "label": "Cette année",
+                      "value": "this_year"
+                    },
+                    {
+                      "label": "Année dernière",
+                      "value": "last_year"
+                    },
+                    {
+                      "label": "Ce printemps",
+                      "value": "spring"
+                    },
+                    {
+                      "label": "Toute la période",
+                      "value": "all"
+                    }
+                  ]
+                },
+                "area": {
+                  "value": "Finistère",
+                  "options": [
+                    {
+                      "label": "Toute la France",
+                      "value": ""
+                    },
+                    {
+                      "label": "Bas-Rhin",
+                      "value": "Bas-Rhin"
+                    },
+                    {
+                      "label": "Bouches-du-Rhône",
+                      "value": "Bouches-du-Rhône"
+                    },
+                    {
+                      "label": "Charente-Maritime",
+                      "value": "Charente-Maritime"
+                    },
+                    {
+                      "label": "Côtes-d'Armor",
+                      "value": "Côtes-d'Armor"
+                    },
+                    {
+                      "label": "Deux-Sèvres",
+                      "value": "Deux-Sèvres"
+                    },
+                    {
+                      "label": "Finistère",
+                      "value": "Finistère"
+                    },
+                    {
+                      "label": "Gironde",
+                      "value": "Gironde"
+                    },
+                    {
+                      "label": "Hérault",
+                      "value": "Hérault"
+                    },
+                    {
+                      "label": "Ille-et-Vilaine",
+                      "value": "Ille-et-Vilaine"
+                    },
+                    {
+                      "label": "Indre-et-Loire",
+                      "value": "Indre-et-Loire"
+                    },
+                    {
+                      "label": "Loire-Atlantique",
+                      "value": "Loire-Atlantique"
+                    },
+                    {
+                      "label": "Loiret",
+                      "value": "Loiret"
+                    },
+                    {
+                      "label": "Morbihan",
+                      "value": "Morbihan"
+                    },
+                    {
+                      "label": "Vendée",
+                      "value": "Vendée"
+                    }
+                  ]
+                }
+              },
+              "species": {},
+              "footer": {
+                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "question": "Interaction sur la surface de classement : filtre « zone » → Gironde",
+      "action": {
+        "name": "set_filter",
+        "context": {
+          "filter": "area",
+          "value": "Gironde"
+        }
+      },
+      "kind": "ranking",
+      "mode": "update",
+      "surfaceId": "lpo-exemple-bout-en-bout-2",
+      "text": "Filtre appliqué (zone = Gironde). Sur la zone « Gironde » (année 2025), Buse variable arrive en tête avec 17 observations (15,7 % du total), devant Chevreuil européen, Renard roux. Total : 108 observations.",
+      "messages": [
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/header/subtitle",
+            "value": "année 2025 · Gironde"
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/kpis",
+            "value": [
+              {
+                "label": "Observations (toutes espèces)",
+                "value": "108",
+                "hint": "année 2025",
+                "tone": "neutral"
+              },
+              {
+                "label": "Espèce en tête",
+                "value": "Buse variable",
+                "hint": "17 observations",
+                "tone": "neutral"
+              },
+              {
+                "label": "Espèces classées",
+                "value": "10",
+                "hint": "sur 10 renvoyées",
+                "tone": "neutral"
+              }
+            ]
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/chart/items",
+            "value": [
+              {
+                "label": "Buse variable",
+                "value": 17.0,
+                "hint": "15,7 %"
+              },
+              {
+                "label": "Chevreuil européen",
+                "value": 12.0,
+                "hint": "11,1 %"
+              },
+              {
+                "label": "Renard roux",
+                "value": 11.0,
+                "hint": "10,2 %"
+              },
+              {
+                "label": "Faucon crécerelle",
+                "value": 10.0,
+                "hint": "9,3 %"
+              },
+              {
+                "label": "Milan royal",
+                "value": 8.0,
+                "hint": "7,4 %"
+              },
+              {
+                "label": "Lièvre d'Europe",
+                "value": 8.0,
+                "hint": "7,4 %"
+              },
+              {
+                "label": "Héron cendré",
+                "value": 8.0,
+                "hint": "7,4 %"
+              },
+              {
+                "label": "Crapaud commun",
+                "value": 8.0,
+                "hint": "7,4 %"
+              },
+              {
+                "label": "Sanglier",
+                "value": 6.0,
+                "hint": "5,6 %"
+              },
+              {
+                "label": "Martin-pêcheur d'Europe",
+                "value": 5.0,
+                "hint": "4,6 %"
+              }
+            ]
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/chart/title",
+            "value": "Classement par observations"
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/table/rows",
+            "value": [
+              {
+                "rank": 1,
+                "label": "Buse variable",
+                "value": 17.0,
+                "share": 0.1574074074074074
+              },
+              {
+                "rank": 2,
+                "label": "Chevreuil européen",
+                "value": 12.0,
+                "share": 0.1111111111111111
+              },
+              {
+                "rank": 3,
+                "label": "Renard roux",
+                "value": 11.0,
+                "share": 0.10185185185185185
+              },
+              {
+                "rank": 4,
+                "label": "Faucon crécerelle",
+                "value": 10.0,
+                "share": 0.09259259259259259
+              },
+              {
+                "rank": 5,
+                "label": "Milan royal",
+                "value": 8.0,
+                "share": 0.07407407407407407
+              },
+              {
+                "rank": 6,
+                "label": "Lièvre d'Europe",
+                "value": 8.0,
+                "share": 0.07407407407407407
+              },
+              {
+                "rank": 7,
+                "label": "Héron cendré",
+                "value": 8.0,
+                "share": 0.07407407407407407
+              },
+              {
+                "rank": 8,
+                "label": "Crapaud commun",
+                "value": 8.0,
+                "share": 0.07407407407407407
+              },
+              {
+                "rank": 9,
+                "label": "Sanglier",
+                "value": 6.0,
+                "share": 0.05555555555555555
+              },
+              {
+                "rank": 10,
+                "label": "Martin-pêcheur d'Europe",
+                "value": 5.0,
+                "share": 0.046296296296296294
+              }
+            ]
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/table/caption",
+            "value": "Part calculée sur le total du périmètre filtré."
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/notices",
+            "value": [
+              {
+                "tone": "warning",
+                "title": "Jeu de démonstration",
+                "message": "Jeu de démonstration synthétique (observations naturalistes) — aucune valeur écologique réelle. Les chiffres servent à valider la chaîne MCP → A2UI, pas à documenter la biodiversité."
+              },
+              {
+                "tone": "warning",
+                "title": "Résultat tronqué",
+                "message": "Le serveur MCP a atteint sa limite de lignes : la vue montre un sous-ensemble. Affiner la période ou la zone pour voir l'ensemble."
+              }
+            ]
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/footer/source",
+            "value": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+          }
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "question": "Interaction sur la même surface : filtre « période » → 12 derniers mois",
+      "action": {
+        "name": "set_filter",
+        "context": {
+          "filter": "period",
+          "value": "12m"
+        }
+      },
+      "kind": "ranking",
+      "mode": "update",
+      "surfaceId": "lpo-exemple-bout-en-bout-2",
+      "text": "Filtre appliqué (période = 12 derniers mois). Sur la zone « Gironde » (12 derniers mois), Buse variable arrive en tête avec 26 observations (17,7 % du total), devant Chevreuil européen, Renard roux. Total : 147 observations.",
+      "messages": [
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/header/subtitle",
+            "value": "12 derniers mois · Gironde"
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/kpis",
+            "value": [
+              {
+                "label": "Observations (toutes espèces)",
+                "value": "147",
+                "hint": "12 derniers mois",
+                "tone": "neutral"
+              },
+              {
+                "label": "Espèce en tête",
+                "value": "Buse variable",
+                "hint": "26 observations",
+                "tone": "neutral"
+              },
+              {
+                "label": "Espèces classées",
+                "value": "10",
+                "hint": "sur 10 renvoyées",
+                "tone": "neutral"
+              }
+            ]
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/chart/items",
+            "value": [
+              {
+                "label": "Buse variable",
+                "value": 26.0,
+                "hint": "17,7 %"
+              },
+              {
+                "label": "Chevreuil européen",
+                "value": 21.0,
+                "hint": "14,3 %"
+              },
+              {
+                "label": "Renard roux",
+                "value": 17.0,
+                "hint": "11,6 %"
+              },
+              {
+                "label": "Milan royal",
+                "value": 13.0,
+                "hint": "8,8 %"
+              },
+              {
+                "label": "Sanglier",
+                "value": 9.0,
+                "hint": "6,1 %"
+              },
+              {
+                "label": "Martin-pêcheur d'Europe",
+                "value": 9.0,
+                "hint": "6,1 %"
+              },
+              {
+                "label": "Héron cendré",
+                "value": 9.0,
+                "hint": "6,1 %"
+              },
+              {
+                "label": "Crapaud commun",
+                "value": 9.0,
+                "hint": "6,1 %"
+              },
+              {
+                "label": "Lièvre d'Europe",
+                "value": 8.0,
+                "hint": "5,4 %"
+              },
+              {
+                "label": "Faucon crécerelle",
+                "value": 7.0,
+                "hint": "4,8 %"
+              }
+            ]
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/chart/title",
+            "value": "Classement par observations"
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/table/rows",
+            "value": [
+              {
+                "rank": 1,
+                "label": "Buse variable",
+                "value": 26.0,
+                "share": 0.17687074829931973
+              },
+              {
+                "rank": 2,
+                "label": "Chevreuil européen",
+                "value": 21.0,
+                "share": 0.14285714285714285
+              },
+              {
+                "rank": 3,
+                "label": "Renard roux",
+                "value": 17.0,
+                "share": 0.11564625850340136
+              },
+              {
+                "rank": 4,
+                "label": "Milan royal",
+                "value": 13.0,
+                "share": 0.08843537414965986
+              },
+              {
+                "rank": 5,
+                "label": "Sanglier",
+                "value": 9.0,
+                "share": 0.061224489795918366
+              },
+              {
+                "rank": 6,
+                "label": "Martin-pêcheur d'Europe",
+                "value": 9.0,
+                "share": 0.061224489795918366
+              },
+              {
+                "rank": 7,
+                "label": "Héron cendré",
+                "value": 9.0,
+                "share": 0.061224489795918366
+              },
+              {
+                "rank": 8,
+                "label": "Crapaud commun",
+                "value": 9.0,
+                "share": 0.061224489795918366
+              },
+              {
+                "rank": 9,
+                "label": "Lièvre d'Europe",
+                "value": 8.0,
+                "share": 0.05442176870748299
+              },
+              {
+                "rank": 10,
+                "label": "Faucon crécerelle",
+                "value": 7.0,
+                "share": 0.047619047619047616
+              }
+            ]
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/table/caption",
+            "value": "Part calculée sur le total du périmètre filtré."
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/notices",
+            "value": [
+              {
+                "tone": "warning",
+                "title": "Jeu de démonstration",
+                "message": "Jeu de démonstration synthétique (observations naturalistes) — aucune valeur écologique réelle. Les chiffres servent à valider la chaîne MCP → A2UI, pas à documenter la biodiversité."
+              },
+              {
+                "tone": "warning",
+                "title": "Résultat tronqué",
+                "message": "Le serveur MCP a atteint sa limite de lignes : la vue montre un sous-ensemble. Affiner la période ou la zone pour voir l'ensemble."
+              }
+            ]
+          }
+        },
+        {
+          "version": "1.0",
+          "updateDataModel": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2",
+            "path": "/footer/source",
+            "value": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+          }
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "question": "Carte des observations de Busard cendré ce printemps ?",
+      "action": null,
+      "kind": "map",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-3",
+      "text": "16 observations géolocalisées réparties sur 16 mailles pour Busard cendré (printemps 2026, France entière). 16 maille(s) contiennent une espèce sensible : la précision spatiale est volontairement dégradée.",
+      "messages": [
+        {
+          "version": "1.0",
+          "deleteSurface": {
+            "surfaceId": "lpo-exemple-bout-en-bout-2"
+          }
+        },
+        {
+          "version": "1.0",
+          "createSurface": {
+            "surfaceId": "lpo-exemple-bout-en-bout-3",
+            "catalogId": "https://lpo-data-ai.example/a2ui/catalogs/lpo/v1/catalog.json",
+            "sendDataModel": true,
+            "components": [
+              {
+                "id": "root",
+                "component": "Column",
+                "children": [
+                  "header",
+                  "kpis",
+                  "main_card",
+                  "table_card",
+                  "notice_list",
+                  "filters_card",
+                  "footer"
+                ]
+              },
+              {
+                "id": "header",
+                "component": "Card",
+                "child": "header_col"
+              },
+              {
+                "id": "header_col",
+                "component": "Column",
+                "children": [
+                  "header_title",
+                  "header_subtitle"
+                ]
+              },
+              {
+                "id": "header_title",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/title"
+                }
+              },
+              {
+                "id": "header_subtitle",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/subtitle"
+                },
+                "variant": "caption"
+              },
+              {
+                "id": "kpis",
+                "component": "List",
+                "direction": "horizontal",
+                "children": {
+                  "path": "/kpis",
+                  "componentId": "kpi_tpl"
+                }
+              },
+              {
+                "id": "kpi_tpl",
+                "component": "KpiCard",
+                "label": {
+                  "@path": "label"
+                },
+                "value": {
+                  "@path": "value"
+                },
+                "hint": {
+                  "@path": "hint"
+                },
+                "trend": {
+                  "@path": "trend"
+                },
+                "tone": {
+                  "@path": "tone"
+                }
+              },
+              {
+                "id": "main_card",
+                "component": "Card",
+                "child": "chart"
+              },
+              {
+                "id": "chart",
+                "component": "MapChart",
+                "title": {
+                  "@path": "/chart/title"
+                },
+                "points": {
+                  "@path": "/chart/points"
+                },
+                "legend": {
+                  "@path": "/chart/legend"
+                },
+                "privacyMode": {
+                  "@path": "/chart/privacyMode"
+                },
+                "height": 460,
+                "emptyMessage": {
+                  "@path": "/chart/emptyMessage"
+                }
+              },
+              {
+                "id": "table_card",
+                "component": "Card",
+                "child": "table"
+              },
+              {
+                "id": "table",
+                "component": "DataTable",
+                "title": {
+                  "@path": "/table/title"
+                },
+                "caption": {
+                  "@path": "/table/caption"
+                },
+                "columns": [
+                  {
+                    "key": "label",
+                    "label": "Point",
+                    "align": "left"
+                  },
+                  {
+                    "key": "value",
+                    "label": "Observations",
+                    "align": "right",
+                    "format": "integer"
+                  },
+                  {
+                    "key": "precision",
+                    "label": "Précision",
+                    "align": "left"
+                  }
+                ],
+                "rows": {
+                  "@path": "/table/rows"
+                },
+                "maxRows": 12,
+                "emptyMessage": {
+                  "@path": "/table/emptyMessage"
+                }
+              },
+              {
+                "id": "notice_list",
+                "component": "List",
+                "children": {
+                  "path": "/notices",
+                  "componentId": "notice_tpl"
+                }
+              },
+              {
+                "id": "notice_tpl",
+                "component": "Notice",
+                "tone": {
+                  "@path": "tone"
+                },
+                "title": {
+                  "@path": "title"
+                },
+                "message": {
+                  "@path": "message"
+                }
+              },
+              {
+                "id": "filters_card",
+                "component": "Card",
+                "child": "filters_col"
+              },
+              {
+                "id": "filters_col",
+                "component": "Column",
+                "children": [
+                  "filters_title",
+                  "filters_row"
+                ]
+              },
+              {
+                "id": "filters_title",
+                "component": "Text",
+                "text": "Affiner",
+                "variant": "caption"
+              },
+              {
+                "id": "filters_row",
+                "component": "Row",
+                "children": [
+                  "filter_species",
+                  "filter_period",
+                  "filter_area"
+                ]
+              },
+              {
+                "id": "filter_species",
+                "component": "SelectField",
+                "label": "Espèce",
+                "value": {
+                  "@path": "/filters/species/value"
+                },
+                "options": {
+                  "@path": "/filters/species/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Espèce modifié",
+                    "context": {
+                      "filter": "species",
+                      "value": {
+                        "@path": "/filters/species/value"
+                      },
+                      "surfaceKind": "map"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "filter_period",
+                "component": "SelectField",
+                "label": "Période",
+                "value": {
+                  "@path": "/filters/period/value"
+                },
+                "options": {
+                  "@path": "/filters/period/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Période modifié",
+                    "context": {
+                      "filter": "period",
+                      "value": {
+                        "@path": "/filters/period/value"
+                      },
+                      "surfaceKind": "map"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "filter_area",
+                "component": "SelectField",
+                "label": "Zone",
+                "value": {
+                  "@path": "/filters/area/value"
+                },
+                "options": {
+                  "@path": "/filters/area/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Zone modifié",
+                    "context": {
+                      "filter": "area",
+                      "value": {
+                        "@path": "/filters/area/value"
+                      },
+                      "surfaceKind": "map"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "footer",
+                "component": "Text",
+                "text": {
+                  "@path": "/footer/source"
+                },
+                "variant": "caption"
+              }
+            ],
+            "dataModel": {
+              "header": {
+                "title": "Carte des observations — Busard cendré",
+                "subtitle": "printemps 2026 · France entière"
+              },
+              "kpis": [
+                {
+                  "label": "Mailles occupées",
+                  "value": "16",
+                  "hint": "printemps 2026",
+                  "tone": "neutral"
+                },
+                {
+                  "label": "Observations cartographiées",
+                  "value": "16",
+                  "hint": "cumul des mailles",
+                  "tone": "neutral"
+                },
+                {
+                  "label": "Mailles sensibles",
+                  "value": "16",
+                  "hint": "espèces protégées ou sensibles",
+                  "tone": "warning"
+                }
+              ],
+              "chart": {
+                "title": "Densité d'observations par maille",
+                "series": [],
+                "items": [],
+                "points": [
+                  {
+                    "lat": 43.5,
+                    "lon": 3.2,
+                    "label": "43.5, 3.2",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 43.6,
+                    "lon": 3.8,
+                    "label": "43.6, 3.8",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 43.7,
+                    "lon": 3.4,
+                    "label": "43.7, 3.4",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 44.8,
+                    "lon": -0.1,
+                    "label": "44.8, -0.1",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 45.2,
+                    "lon": -0.9,
+                    "label": "45.2, -0.9",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 45.8,
+                    "lon": -0.8,
+                    "label": "45.8, -0.8",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 46.9,
+                    "lon": -1.6,
+                    "label": "46.9, -1.6",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 46.9,
+                    "lon": -0.1,
+                    "label": "46.9, -0.1",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 47.2,
+                    "lon": 0.9,
+                    "label": "47.2, 0.9",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 47.6,
+                    "lon": -3.0,
+                    "label": "47.6, -3.0",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 47.8,
+                    "lon": -3.7,
+                    "label": "47.8, -3.7",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 47.8,
+                    "lon": 1.9,
+                    "label": "47.8, 1.9",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 48.2,
+                    "lon": -1.6,
+                    "label": "48.2, -1.6",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 48.3,
+                    "lon": -1.9,
+                    "label": "48.3, -1.9",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 48.4,
+                    "lon": -4.5,
+                    "label": "48.4, -4.5",
+                    "value": 1.0,
+                    "sensitive": true
+                  },
+                  {
+                    "lat": 48.5,
+                    "lon": 7.7,
+                    "label": "48.5, 7.7",
+                    "value": 1.0,
+                    "sensitive": true
+                  }
+                ],
+                "legend": [
+                  {
+                    "label": "Maille à faible densité",
+                    "value": "1",
+                    "tone": "neutral"
+                  },
+                  {
+                    "label": "Densité moyenne",
+                    "value": "0",
+                    "tone": "neutral"
+                  },
+                  {
+                    "label": "Densité maximale",
+                    "value": "1",
+                    "tone": "warning"
+                  }
+                ],
+                "xLabel": "",
+                "yLabel": "",
+                "valueLabel": "",
+                "privacyMode": "blurred",
+                "emptyMessage": "Aucun point géolocalisé."
+              },
+              "table": {
+                "title": "Mailles les plus denses",
+                "caption": "Coordonnées agrégées côté serveur.",
+                "rows": [
+                  {
+                    "label": "43.5, 3.2",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  },
+                  {
+                    "label": "43.6, 3.8",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  },
+                  {
+                    "label": "43.7, 3.4",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  },
+                  {
+                    "label": "44.8, -0.1",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  },
+                  {
+                    "label": "45.2, -0.9",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  },
+                  {
+                    "label": "45.8, -0.8",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  },
+                  {
+                    "label": "46.9, -1.6",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  },
+                  {
+                    "label": "46.9, -0.1",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  },
+                  {
+                    "label": "47.2, 0.9",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  },
+                  {
+                    "label": "47.6, -3.0",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  },
+                  {
+                    "label": "47.8, -3.7",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  },
+                  {
+                    "label": "47.8, 1.9",
+                    "value": 1.0,
+                    "precision": "floutée"
+                  }
+                ],
+                "emptyMessage": "Aucune maille."
+              },
+              "notices": [
+                {
+                  "tone": "warning",
+                  "title": "Jeu de démonstration",
+                  "message": "Jeu de démonstration synthétique (observations naturalistes) — aucune valeur écologique réelle. Les chiffres servent à valider la chaîne MCP → A2UI, pas à documenter la biodiversité."
+                },
+                {
+                  "tone": "info",
+                  "title": "À savoir",
+                  "message": "Coordonnées agrégées sur une maille d'environ 11 km (protection des espèces sensibles)."
+                },
+                {
+                  "tone": "warning",
+                  "title": "Localisation protégée",
+                  "message": "Les coordonnées sont agrégées et arrondies par le serveur MCP (espèces sensibles). Aucun point exact n'est transmis au client."
+                }
+              ],
+              "filters": {
+                "species": {
+                  "value": "Busard cendré",
+                  "options": [
+                    {
+                      "label": "Toutes les espèces",
+                      "value": ""
+                    },
+                    {
+                      "label": "Busard cendré",
+                      "value": "Busard cendré"
+                    },
+                    {
+                      "label": "Buse variable",
+                      "value": "Buse variable"
+                    },
+                    {
+                      "label": "Chevreuil européen",
+                      "value": "Chevreuil européen"
+                    },
+                    {
+                      "label": "Chouette effraie",
+                      "value": "Chouette effraie"
+                    },
+                    {
+                      "label": "Cigogne blanche",
+                      "value": "Cigogne blanche"
+                    },
+                    {
+                      "label": "Crapaud commun",
+                      "value": "Crapaud commun"
+                    },
+                    {
+                      "label": "Faucon crécerelle",
+                      "value": "Faucon crécerelle"
+                    },
+                    {
+                      "label": "Héron cendré",
+                      "value": "Héron cendré"
+                    },
+                    {
+                      "label": "Lièvre d'Europe",
+                      "value": "Lièvre d'Europe"
+                    },
+                    {
+                      "label": "Martin-pêcheur d'Europe",
+                      "value": "Martin-pêcheur d'Europe"
+                    },
+                    {
+                      "label": "Milan royal",
+                      "value": "Milan royal"
+                    },
+                    {
+                      "label": "Renard roux",
+                      "value": "Renard roux"
+                    },
+                    {
+                      "label": "Sanglier",
+                      "value": "Sanglier"
+                    },
+                    {
+                      "label": "Triton palmé",
+                      "value": "Triton palmé"
+                    }
+                  ]
+                },
+                "period": {
+                  "value": "spring",
+                  "options": [
+                    {
+                      "label": "10 dernières années",
+                      "value": "10y"
+                    },
+                    {
+                      "label": "12 derniers mois",
+                      "value": "12m"
+                    },
+                    {
+                      "label": "Cette année",
+                      "value": "this_year"
+                    },
+                    {
+                      "label": "Année dernière",
+                      "value": "last_year"
+                    },
+                    {
+                      "label": "Ce printemps",
+                      "value": "spring"
+                    },
+                    {
+                      "label": "Toute la période",
+                      "value": "all"
+                    }
+                  ]
+                },
+                "area": {
+                  "value": "",
+                  "options": [
+                    {
+                      "label": "Toute la France",
+                      "value": ""
+                    },
+                    {
+                      "label": "Bas-Rhin",
+                      "value": "Bas-Rhin"
+                    },
+                    {
+                      "label": "Bouches-du-Rhône",
+                      "value": "Bouches-du-Rhône"
+                    },
+                    {
+                      "label": "Charente-Maritime",
+                      "value": "Charente-Maritime"
+                    },
+                    {
+                      "label": "Côtes-d'Armor",
+                      "value": "Côtes-d'Armor"
+                    },
+                    {
+                      "label": "Deux-Sèvres",
+                      "value": "Deux-Sèvres"
+                    },
+                    {
+                      "label": "Finistère",
+                      "value": "Finistère"
+                    },
+                    {
+                      "label": "Gironde",
+                      "value": "Gironde"
+                    },
+                    {
+                      "label": "Hérault",
+                      "value": "Hérault"
+                    },
+                    {
+                      "label": "Ille-et-Vilaine",
+                      "value": "Ille-et-Vilaine"
+                    },
+                    {
+                      "label": "Indre-et-Loire",
+                      "value": "Indre-et-Loire"
+                    },
+                    {
+                      "label": "Loire-Atlantique",
+                      "value": "Loire-Atlantique"
+                    },
+                    {
+                      "label": "Loiret",
+                      "value": "Loiret"
+                    },
+                    {
+                      "label": "Morbihan",
+                      "value": "Morbihan"
+                    },
+                    {
+                      "label": "Vendée",
+                      "value": "Vendée"
+                    }
+                  ]
+                }
+              },
+              "species": {},
+              "footer": {
+                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · confidentialité : blurred · calculé le 2026-11-12T09:58:00+00:00"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "question": "Compare Milan royal et Busard cendré par mois.",
+      "action": null,
+      "kind": "trend",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-4",
+      "text": "Comparaison toute la période disponible : Milan royal totalise 841 observations, contre 510 pour Busard cendré (écart 331).",
+      "messages": [
+        {
+          "version": "1.0",
+          "deleteSurface": {
+            "surfaceId": "lpo-exemple-bout-en-bout-3"
+          }
+        },
+        {
+          "version": "1.0",
+          "createSurface": {
+            "surfaceId": "lpo-exemple-bout-en-bout-4",
+            "catalogId": "https://lpo-data-ai.example/a2ui/catalogs/lpo/v1/catalog.json",
+            "sendDataModel": true,
+            "components": [
+              {
+                "id": "root",
+                "component": "Column",
+                "children": [
+                  "header",
+                  "kpis",
+                  "main_card",
+                  "table_card",
+                  "notice_list",
+                  "filters_card",
+                  "footer"
+                ]
+              },
+              {
+                "id": "header",
+                "component": "Card",
+                "child": "header_col"
+              },
+              {
+                "id": "header_col",
+                "component": "Column",
+                "children": [
+                  "header_title",
+                  "header_subtitle"
+                ]
+              },
+              {
+                "id": "header_title",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/title"
+                }
+              },
+              {
+                "id": "header_subtitle",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/subtitle"
+                },
+                "variant": "caption"
+              },
+              {
+                "id": "kpis",
+                "component": "List",
+                "direction": "horizontal",
+                "children": {
+                  "path": "/kpis",
+                  "componentId": "kpi_tpl"
+                }
+              },
+              {
+                "id": "kpi_tpl",
+                "component": "KpiCard",
+                "label": {
+                  "@path": "label"
+                },
+                "value": {
+                  "@path": "value"
+                },
+                "hint": {
+                  "@path": "hint"
+                },
+                "trend": {
+                  "@path": "trend"
+                },
+                "tone": {
+                  "@path": "tone"
+                }
+              },
+              {
+                "id": "main_card",
+                "component": "Card",
+                "child": "chart"
+              },
+              {
+                "id": "chart",
+                "component": "LineChart",
+                "title": {
+                  "@path": "/chart/title"
+                },
+                "series": {
+                  "@path": "/chart/series"
+                },
+                "xLabel": {
+                  "@path": "/chart/xLabel"
+                },
+                "yLabel": {
+                  "@path": "/chart/yLabel"
+                },
+                "valueFormat": "integer",
+                "height": 320,
+                "emptyMessage": {
+                  "@path": "/chart/emptyMessage"
+                }
+              },
+              {
+                "id": "table_card",
+                "component": "Card",
+                "child": "table"
+              },
+              {
+                "id": "table",
+                "component": "DataTable",
+                "title": {
+                  "@path": "/table/title"
+                },
+                "caption": {
+                  "@path": "/table/caption"
+                },
+                "columns": [
+                  {
+                    "key": "period",
+                    "label": "Période",
+                    "align": "left"
+                  },
+                  {
+                    "key": "value",
+                    "label": "Observations",
+                    "align": "right",
+                    "format": "integer"
+                  },
+                  {
+                    "key": "delta",
+                    "label": "Variation",
+                    "align": "right",
+                    "format": "percent"
+                  }
+                ],
+                "rows": {
+                  "@path": "/table/rows"
+                },
+                "maxRows": 12,
+                "emptyMessage": {
+                  "@path": "/table/emptyMessage"
+                }
+              },
+              {
+                "id": "notice_list",
+                "component": "List",
+                "children": {
+                  "path": "/notices",
+                  "componentId": "notice_tpl"
+                }
+              },
+              {
+                "id": "notice_tpl",
+                "component": "Notice",
+                "tone": {
+                  "@path": "tone"
+                },
+                "title": {
+                  "@path": "title"
+                },
+                "message": {
+                  "@path": "message"
+                }
+              },
+              {
+                "id": "filters_card",
+                "component": "Card",
+                "child": "filters_col"
+              },
+              {
+                "id": "filters_col",
+                "component": "Column",
+                "children": [
+                  "filters_title",
+                  "filters_row"
+                ]
+              },
+              {
+                "id": "filters_title",
+                "component": "Text",
+                "text": "Affiner",
+                "variant": "caption"
+              },
+              {
+                "id": "filters_row",
+                "component": "Row",
+                "children": [
+                  "filter_species",
+                  "filter_period",
+                  "filter_area"
+                ]
+              },
+              {
+                "id": "filter_species",
+                "component": "SelectField",
+                "label": "Espèce",
+                "value": {
+                  "@path": "/filters/species/value"
+                },
+                "options": {
+                  "@path": "/filters/species/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Espèce modifié",
+                    "context": {
+                      "filter": "species",
+                      "value": {
+                        "@path": "/filters/species/value"
+                      },
+                      "surfaceKind": "trend"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "filter_period",
+                "component": "SelectField",
+                "label": "Période",
+                "value": {
+                  "@path": "/filters/period/value"
+                },
+                "options": {
+                  "@path": "/filters/period/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Période modifié",
+                    "context": {
+                      "filter": "period",
+                      "value": {
+                        "@path": "/filters/period/value"
+                      },
+                      "surfaceKind": "trend"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "filter_area",
+                "component": "SelectField",
+                "label": "Zone",
+                "value": {
+                  "@path": "/filters/area/value"
+                },
+                "options": {
+                  "@path": "/filters/area/options"
+                },
+                "action": {
+                  "event": {
+                    "name": "set_filter",
+                    "userMessage": "Filtre Zone modifié",
+                    "context": {
+                      "filter": "area",
+                      "value": {
+                        "@path": "/filters/area/value"
+                      },
+                      "surfaceKind": "trend"
+                    }
+                  }
+                }
+              },
+              {
+                "id": "footer",
+                "component": "Text",
+                "text": {
+                  "@path": "/footer/source"
+                },
+                "variant": "caption"
+              }
+            ],
+            "dataModel": {
+              "header": {
+                "title": "Comparaison — Milan royal vs Busard cendré",
+                "subtitle": "toute la période disponible · France entière"
+              },
+              "kpis": [
+                {
+                  "label": "Milan royal",
+                  "value": "841",
+                  "hint": "observations cumulées",
+                  "tone": "neutral"
+                },
+                {
+                  "label": "Busard cendré",
+                  "value": "510",
+                  "hint": "observations cumulées",
+                  "tone": "neutral"
+                }
+              ],
+              "chart": {
+                "title": "Observations par mois",
+                "series": [
+                  {
+                    "label": "Milan royal",
+                    "color": "#1f4e79",
+                    "points": [
+                      {
+                        "x": "2016-01",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2016-02",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2016-03",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2016-04",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2016-05",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2016-06",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2016-07",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2016-08",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2016-09",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2016-10",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2016-11",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2016-12",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2017-01",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2017-02",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2017-03",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2017-04",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2017-05",
+                        "y": 11.0
+                      },
+                      {
+                        "x": "2017-06",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2017-07",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2017-08",
+                        "y": 12.0
+                      },
+                      {
+                        "x": "2017-09",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2017-10",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2017-11",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2017-12",
+                        "y": 12.0
+                      },
+                      {
+                        "x": "2018-01",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2018-02",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2018-03",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2018-04",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2018-05",
+                        "y": 11.0
+                      },
+                      {
+                        "x": "2018-06",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2018-07",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2018-08",
+                        "y": 10.0
+                      },
+                      {
+                        "x": "2018-09",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2018-10",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2018-11",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2018-12",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2019-01",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2019-02",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2019-03",
+                        "y": 11.0
+                      },
+                      {
+                        "x": "2019-04",
+                        "y": 9.0
+                      },
+                      {
+                        "x": "2019-05",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2019-06",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2019-07",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2019-08",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2019-09",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2019-10",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2019-11",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2019-12",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2020-01",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2020-02",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2020-03",
+                        "y": 9.0
+                      },
+                      {
+                        "x": "2020-04",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2020-05",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2020-06",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2020-07",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2020-08",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2020-09",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2020-10",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2020-11",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2020-12",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2021-01",
+                        "y": 9.0
+                      },
+                      {
+                        "x": "2021-02",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2021-03",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2021-04",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2021-05",
+                        "y": 9.0
+                      },
+                      {
+                        "x": "2021-06",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2021-07",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2021-08",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2021-09",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2021-10",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2021-11",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2021-12",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2022-01",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2022-02",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2022-03",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2022-04",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2022-05",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2022-06",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2022-07",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2022-08",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2022-09",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2022-10",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2022-11",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2022-12",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2023-01",
+                        "y": 12.0
+                      },
+                      {
+                        "x": "2023-02",
+                        "y": 10.0
+                      },
+                      {
+                        "x": "2023-03",
+                        "y": 9.0
+                      },
+                      {
+                        "x": "2023-04",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2023-05",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2023-06",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2023-07",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2023-08",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2023-09",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2023-10",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2023-11",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2023-12",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2024-01",
+                        "y": 10.0
+                      },
+                      {
+                        "x": "2024-02",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2024-03",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2024-04",
+                        "y": 10.0
+                      },
+                      {
+                        "x": "2024-05",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2024-06",
+                        "y": 11.0
+                      },
+                      {
+                        "x": "2024-07",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2024-08",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2024-09",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2024-10",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2024-11",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2024-12",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2025-01",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2025-02",
+                        "y": 11.0
+                      },
+                      {
+                        "x": "2025-03",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2025-04",
+                        "y": 9.0
+                      },
+                      {
+                        "x": "2025-05",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2025-06",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2025-07",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2025-08",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2025-09",
+                        "y": 9.0
+                      },
+                      {
+                        "x": "2025-10",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2025-11",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2025-12",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2026-01",
+                        "y": 9.0
+                      },
+                      {
+                        "x": "2026-02",
+                        "y": 11.0
+                      },
+                      {
+                        "x": "2026-03",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2026-04",
+                        "y": 11.0
+                      },
+                      {
+                        "x": "2026-05",
+                        "y": 12.0
+                      },
+                      {
+                        "x": "2026-06",
+                        "y": 11.0
+                      },
+                      {
+                        "x": "2026-07",
+                        "y": 10.0
+                      },
+                      {
+                        "x": "2026-08",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2026-09",
+                        "y": 12.0
+                      },
+                      {
+                        "x": "2026-10",
+                        "y": 7.0
+                      }
+                    ]
+                  },
+                  {
+                    "label": "Busard cendré",
+                    "color": "#2e7d32",
+                    "points": [
+                      {
+                        "x": "2016-01",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2016-02",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2016-03",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2016-04",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2016-05",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2016-06",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2016-07",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2016-08",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2016-09",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2016-10",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2016-11",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2016-12",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2017-01",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2017-02",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2017-03",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2017-04",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2017-05",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2017-06",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2017-07",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2017-08",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2017-09",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2017-10",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2017-11",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2018-01",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2018-02",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2018-03",
+                        "y": 9.0
+                      },
+                      {
+                        "x": "2018-04",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2018-05",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2018-06",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2018-07",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2018-09",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2018-10",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2018-11",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2019-01",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2019-02",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2019-03",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2019-04",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2019-05",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2019-06",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2019-07",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2019-08",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2019-09",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2019-10",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2019-11",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2019-12",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2020-02",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2020-03",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2020-04",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2020-05",
+                        "y": 11.0
+                      },
+                      {
+                        "x": "2020-06",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2020-07",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2020-08",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2020-10",
+                        "y": 9.0
+                      },
+                      {
+                        "x": "2020-11",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2020-12",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2021-02",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2021-03",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2021-04",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2021-05",
+                        "y": 9.0
+                      },
+                      {
+                        "x": "2021-06",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2021-07",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2021-08",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2021-09",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2021-10",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2021-11",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2021-12",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2022-01",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2022-02",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2022-03",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2022-04",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2022-05",
+                        "y": 7.0
+                      },
+                      {
+                        "x": "2022-06",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2022-07",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2022-08",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2022-09",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2022-10",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2022-11",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2022-12",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2023-01",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2023-02",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2023-03",
+                        "y": 10.0
+                      },
+                      {
+                        "x": "2023-04",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2023-05",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2023-06",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2023-07",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2023-08",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2023-09",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2023-10",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2023-11",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2023-12",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2024-01",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2024-02",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2024-03",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2024-04",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2024-05",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2024-06",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2024-07",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2024-08",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2024-09",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2024-10",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2024-11",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2024-12",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2025-01",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2025-02",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2025-03",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2025-04",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2025-05",
+                        "y": 8.0
+                      },
+                      {
+                        "x": "2025-06",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2025-07",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2025-08",
+                        "y": 1.0
+                      },
+                      {
+                        "x": "2025-09",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2025-10",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2025-11",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2025-12",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2026-01",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2026-02",
+                        "y": 4.0
+                      },
+                      {
+                        "x": "2026-03",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2026-04",
+                        "y": 6.0
+                      },
+                      {
+                        "x": "2026-05",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2026-06",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2026-07",
+                        "y": 5.0
+                      },
+                      {
+                        "x": "2026-08",
+                        "y": 2.0
+                      },
+                      {
+                        "x": "2026-09",
+                        "y": 3.0
+                      },
+                      {
+                        "x": "2026-10",
+                        "y": 2.0
+                      }
+                    ]
+                  }
+                ],
+                "items": [],
+                "points": [],
+                "legend": [],
+                "xLabel": "Mois",
+                "yLabel": "Observations",
+                "valueLabel": "",
+                "privacyMode": "exact",
+                "emptyMessage": "Aucune série."
+              },
+              "table": {
+                "title": "Totaux comparés",
+                "caption": "Somme des observations sur la période.",
+                "rows": [
+                  {
+                    "period": "Milan royal",
+                    "value": 841.0,
+                    "delta": null
+                  },
+                  {
+                    "period": "Busard cendré",
+                    "value": 510.0,
+                    "delta": null
+                  }
+                ],
+                "emptyMessage": "Aucune donnée."
+              },
+              "notices": [
+                {
+                  "tone": "warning",
+                  "title": "Jeu de démonstration",
+                  "message": "Jeu de démonstration synthétique (observations naturalistes) — aucune valeur écologique réelle. Les chiffres servent à valider la chaîne MCP → A2UI, pas à documenter la biodiversité."
+                }
+              ],
+              "filters": {
+                "species": {
+                  "value": "",
+                  "options": [
+                    {
+                      "label": "Toutes les espèces",
+                      "value": ""
+                    },
+                    {
+                      "label": "Busard cendré",
+                      "value": "Busard cendré"
+                    },
+                    {
+                      "label": "Buse variable",
+                      "value": "Buse variable"
+                    },
+                    {
+                      "label": "Chevreuil européen",
+                      "value": "Chevreuil européen"
+                    },
+                    {
+                      "label": "Chouette effraie",
+                      "value": "Chouette effraie"
+                    },
+                    {
+                      "label": "Cigogne blanche",
+                      "value": "Cigogne blanche"
+                    },
+                    {
+                      "label": "Crapaud commun",
+                      "value": "Crapaud commun"
+                    },
+                    {
+                      "label": "Faucon crécerelle",
+                      "value": "Faucon crécerelle"
+                    },
+                    {
+                      "label": "Héron cendré",
+                      "value": "Héron cendré"
+                    },
+                    {
+                      "label": "Lièvre d'Europe",
+                      "value": "Lièvre d'Europe"
+                    },
+                    {
+                      "label": "Martin-pêcheur d'Europe",
+                      "value": "Martin-pêcheur d'Europe"
+                    },
+                    {
+                      "label": "Milan royal",
+                      "value": "Milan royal"
+                    },
+                    {
+                      "label": "Renard roux",
+                      "value": "Renard roux"
+                    },
+                    {
+                      "label": "Sanglier",
+                      "value": "Sanglier"
+                    },
+                    {
+                      "label": "Triton palmé",
+                      "value": "Triton palmé"
+                    }
+                  ]
+                },
+                "period": {
+                  "value": "all",
+                  "options": [
+                    {
+                      "label": "10 dernières années",
+                      "value": "10y"
+                    },
+                    {
+                      "label": "12 derniers mois",
+                      "value": "12m"
+                    },
+                    {
+                      "label": "Cette année",
+                      "value": "this_year"
+                    },
+                    {
+                      "label": "Année dernière",
+                      "value": "last_year"
+                    },
+                    {
+                      "label": "Ce printemps",
+                      "value": "spring"
+                    },
+                    {
+                      "label": "Toute la période",
+                      "value": "all"
+                    }
+                  ]
+                },
+                "area": {
+                  "value": "",
+                  "options": [
+                    {
+                      "label": "Toute la France",
+                      "value": ""
+                    },
+                    {
+                      "label": "Bas-Rhin",
+                      "value": "Bas-Rhin"
+                    },
+                    {
+                      "label": "Bouches-du-Rhône",
+                      "value": "Bouches-du-Rhône"
+                    },
+                    {
+                      "label": "Charente-Maritime",
+                      "value": "Charente-Maritime"
+                    },
+                    {
+                      "label": "Côtes-d'Armor",
+                      "value": "Côtes-d'Armor"
+                    },
+                    {
+                      "label": "Deux-Sèvres",
+                      "value": "Deux-Sèvres"
+                    },
+                    {
+                      "label": "Finistère",
+                      "value": "Finistère"
+                    },
+                    {
+                      "label": "Gironde",
+                      "value": "Gironde"
+                    },
+                    {
+                      "label": "Hérault",
+                      "value": "Hérault"
+                    },
+                    {
+                      "label": "Ille-et-Vilaine",
+                      "value": "Ille-et-Vilaine"
+                    },
+                    {
+                      "label": "Indre-et-Loire",
+                      "value": "Indre-et-Loire"
+                    },
+                    {
+                      "label": "Loire-Atlantique",
+                      "value": "Loire-Atlantique"
+                    },
+                    {
+                      "label": "Loiret",
+                      "value": "Loiret"
+                    },
+                    {
+                      "label": "Morbihan",
+                      "value": "Morbihan"
+                    },
+                    {
+                      "label": "Vendée",
+                      "value": "Vendée"
+                    }
+                  ]
+                }
+              },
+              "species": {},
+              "footer": {
+                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "question": "Fiche espèce du Héron cendré",
+      "action": null,
+      "kind": "species",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-5",
+      "text": "Héron cendré : 938 observation(s), 3 048 individu(s), de 2016-01-15 à 2026-10-30, dans 10 département(s). Statut : protégée",
+      "messages": [
+        {
+          "version": "1.0",
+          "deleteSurface": {
+            "surfaceId": "lpo-exemple-bout-en-bout-4"
+          }
+        },
+        {
+          "version": "1.0",
+          "createSurface": {
+            "surfaceId": "lpo-exemple-bout-en-bout-5",
+            "catalogId": "https://lpo-data-ai.example/a2ui/catalogs/lpo/v1/catalog.json",
+            "sendDataModel": true,
+            "components": [
+              {
+                "id": "root",
+                "component": "Column",
+                "children": [
+                  "header",
+                  "kpis",
+                  "species_card",
+                  "table_card",
+                  "notice_list",
+                  "footer"
+                ]
+              },
+              {
+                "id": "header",
+                "component": "Card",
+                "child": "header_col"
+              },
+              {
+                "id": "header_col",
+                "component": "Column",
+                "children": [
+                  "header_title",
+                  "header_subtitle"
+                ]
+              },
+              {
+                "id": "header_title",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/title"
+                }
+              },
+              {
+                "id": "header_subtitle",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/subtitle"
+                },
+                "variant": "caption"
+              },
+              {
+                "id": "kpis",
+                "component": "List",
+                "direction": "horizontal",
+                "children": {
+                  "path": "/kpis",
+                  "componentId": "kpi_tpl"
+                }
+              },
+              {
+                "id": "kpi_tpl",
+                "component": "KpiCard",
+                "label": {
+                  "@path": "label"
+                },
+                "value": {
+                  "@path": "value"
+                },
+                "hint": {
+                  "@path": "hint"
+                },
+                "trend": {
+                  "@path": "trend"
+                },
+                "tone": {
+                  "@path": "tone"
+                }
+              },
+              {
+                "id": "species_card",
+                "component": "Card",
+                "child": "species_col"
+              },
+              {
+                "id": "species_col",
+                "component": "Column",
+                "children": [
+                  "species_name",
+                  "species_latin",
+                  "species_status",
+                  "species_note"
+                ]
+              },
+              {
+                "id": "species_name",
+                "component": "Text",
+                "text": {
+                  "@path": "/species/name"
+                }
+              },
+              {
+                "id": "species_latin",
+                "component": "Text",
+                "text": {
+                  "@path": "/species/latinName"
+                },
+                "variant": "caption"
+              },
+              {
+                "id": "species_status",
+                "component": "Text",
+                "text": {
+                  "@path": "/species/protection"
+                },
+                "variant": "caption"
+              },
+              {
+                "id": "species_note",
+                "component": "Text",
+                "text": {
+                  "@path": "/species/note"
+                }
+              },
+              {
+                "id": "table_card",
+                "component": "Card",
+                "child": "table"
+              },
+              {
+                "id": "table",
+                "component": "DataTable",
+                "title": {
+                  "@path": "/table/title"
+                },
+                "caption": {
+                  "@path": "/table/caption"
+                },
+                "columns": [
+                  {
+                    "key": "period",
+                    "label": "Période",
+                    "align": "left"
+                  },
+                  {
+                    "key": "value",
+                    "label": "Observations",
+                    "align": "right",
+                    "format": "integer"
+                  },
+                  {
+                    "key": "individuals",
+                    "label": "Individus",
+                    "align": "right",
+                    "format": "integer"
+                  }
+                ],
+                "rows": {
+                  "@path": "/table/rows"
+                },
+                "maxRows": 12,
+                "emptyMessage": {
+                  "@path": "/table/emptyMessage"
+                }
+              },
+              {
+                "id": "notice_list",
+                "component": "List",
+                "children": {
+                  "path": "/notices",
+                  "componentId": "notice_tpl"
+                }
+              },
+              {
+                "id": "notice_tpl",
+                "component": "Notice",
+                "tone": {
+                  "@path": "tone"
+                },
+                "title": {
+                  "@path": "title"
+                },
+                "message": {
+                  "@path": "message"
+                }
+              },
+              {
+                "id": "footer",
+                "component": "Text",
+                "text": {
+                  "@path": "/footer/source"
+                },
+                "variant": "caption"
+              }
+            ],
+            "dataModel": {
+              "header": {
+                "title": "Fiche espèce — Héron cendré",
+                "subtitle": "toute la période disponible · France entière"
+              },
+              "kpis": [
+                {
+                  "label": "Observations",
+                  "value": "938",
+                  "hint": "toute la période disponible",
+                  "tone": "neutral"
+                },
+                {
+                  "label": "Individus",
+                  "value": "3 048",
+                  "hint": "somme des effectifs",
+                  "tone": "neutral"
+                },
+                {
+                  "label": "Départements",
+                  "value": "10",
+                  "hint": "Gironde, Finistère, Hérault",
+                  "tone": "neutral"
+                }
+              ],
+              "chart": {
+                "title": "",
+                "series": [],
+                "items": [],
+                "points": [],
+                "legend": [],
+                "xLabel": "",
+                "yLabel": "",
+                "valueLabel": "",
+                "privacyMode": "exact",
+                "emptyMessage": ""
+              },
+              "table": {
+                "title": "Observations par mois",
+                "caption": "Série mensuelle issue du serveur MCP.",
+                "rows": [
+                  {
+                    "period": "2024-01",
+                    "value": 8.0,
+                    "individuals": 15.0
+                  },
+                  {
+                    "period": "2024-02",
+                    "value": 11.0,
+                    "individuals": 39.0
+                  },
+                  {
+                    "period": "2024-03",
+                    "value": 11.0,
+                    "individuals": 52.0
+                  },
+                  {
+                    "period": "2024-04",
+                    "value": 6.0,
+                    "individuals": 28.0
+                  },
+                  {
+                    "period": "2024-05",
+                    "value": 9.0,
+                    "individuals": 29.0
+                  },
+                  {
+                    "period": "2024-06",
+                    "value": 9.0,
+                    "individuals": 22.0
+                  },
+                  {
+                    "period": "2024-07",
+                    "value": 11.0,
+                    "individuals": 32.0
+                  },
+                  {
+                    "period": "2024-08",
+                    "value": 7.0,
+                    "individuals": 15.0
+                  },
+                  {
+                    "period": "2024-09",
+                    "value": 6.0,
+                    "individuals": 21.0
+                  },
+                  {
+                    "period": "2024-10",
+                    "value": 14.0,
+                    "individuals": 35.0
+                  },
+                  {
+                    "period": "2024-11",
+                    "value": 7.0,
+                    "individuals": 40.0
+                  },
+                  {
+                    "period": "2024-12",
+                    "value": 7.0,
+                    "individuals": 24.0
+                  },
+                  {
+                    "period": "2025-01",
+                    "value": 5.0,
+                    "individuals": 17.0
+                  },
+                  {
+                    "period": "2025-02",
+                    "value": 6.0,
+                    "individuals": 12.0
+                  },
+                  {
+                    "period": "2025-03",
+                    "value": 11.0,
+                    "individuals": 61.0
+                  },
+                  {
+                    "period": "2025-04",
+                    "value": 3.0,
+                    "individuals": 13.0
+                  },
+                  {
+                    "period": "2025-05",
+                    "value": 8.0,
+                    "individuals": 18.0
+                  },
+                  {
+                    "period": "2025-06",
+                    "value": 9.0,
+                    "individuals": 29.0
+                  },
+                  {
+                    "period": "2025-07",
+                    "value": 1.0,
+                    "individuals": 3.0
+                  },
+                  {
+                    "period": "2025-08",
+                    "value": 7.0,
+                    "individuals": 32.0
+                  },
+                  {
+                    "period": "2025-09",
+                    "value": 12.0,
+                    "individuals": 34.0
+                  },
+                  {
+                    "period": "2025-10",
+                    "value": 6.0,
+                    "individuals": 19.0
+                  },
+                  {
+                    "period": "2025-11",
+                    "value": 12.0,
+                    "individuals": 27.0
+                  },
+                  {
+                    "period": "2025-12",
+                    "value": 4.0,
+                    "individuals": 14.0
+                  }
+                ],
+                "emptyMessage": "Aucune série mensuelle disponible."
+              },
+              "notices": [
+                {
+                  "tone": "warning",
+                  "title": "Jeu de démonstration",
+                  "message": "Jeu de démonstration synthétique (observations naturalistes) — aucune valeur écologique réelle. Les chiffres servent à valider la chaîne MCP → A2UI, pas à documenter la biodiversité."
+                }
+              ],
+              "filters": {
+                "species": {
+                  "value": "Héron cendré",
+                  "options": [
+                    {
+                      "label": "Toutes les espèces",
+                      "value": ""
+                    },
+                    {
+                      "label": "Busard cendré",
+                      "value": "Busard cendré"
+                    },
+                    {
+                      "label": "Buse variable",
+                      "value": "Buse variable"
+                    },
+                    {
+                      "label": "Chevreuil européen",
+                      "value": "Chevreuil européen"
+                    },
+                    {
+                      "label": "Chouette effraie",
+                      "value": "Chouette effraie"
+                    },
+                    {
+                      "label": "Cigogne blanche",
+                      "value": "Cigogne blanche"
+                    },
+                    {
+                      "label": "Crapaud commun",
+                      "value": "Crapaud commun"
+                    },
+                    {
+                      "label": "Faucon crécerelle",
+                      "value": "Faucon crécerelle"
+                    },
+                    {
+                      "label": "Héron cendré",
+                      "value": "Héron cendré"
+                    },
+                    {
+                      "label": "Lièvre d'Europe",
+                      "value": "Lièvre d'Europe"
+                    },
+                    {
+                      "label": "Martin-pêcheur d'Europe",
+                      "value": "Martin-pêcheur d'Europe"
+                    },
+                    {
+                      "label": "Milan royal",
+                      "value": "Milan royal"
+                    },
+                    {
+                      "label": "Renard roux",
+                      "value": "Renard roux"
+                    },
+                    {
+                      "label": "Sanglier",
+                      "value": "Sanglier"
+                    },
+                    {
+                      "label": "Triton palmé",
+                      "value": "Triton palmé"
+                    }
+                  ]
+                },
+                "period": {
+                  "value": "all",
+                  "options": [
+                    {
+                      "label": "10 dernières années",
+                      "value": "10y"
+                    },
+                    {
+                      "label": "12 derniers mois",
+                      "value": "12m"
+                    },
+                    {
+                      "label": "Cette année",
+                      "value": "this_year"
+                    },
+                    {
+                      "label": "Année dernière",
+                      "value": "last_year"
+                    },
+                    {
+                      "label": "Ce printemps",
+                      "value": "spring"
+                    },
+                    {
+                      "label": "Toute la période",
+                      "value": "all"
+                    }
+                  ]
+                },
+                "area": {
+                  "value": "",
+                  "options": [
+                    {
+                      "label": "Toute la France",
+                      "value": ""
+                    },
+                    {
+                      "label": "Bas-Rhin",
+                      "value": "Bas-Rhin"
+                    },
+                    {
+                      "label": "Bouches-du-Rhône",
+                      "value": "Bouches-du-Rhône"
+                    },
+                    {
+                      "label": "Charente-Maritime",
+                      "value": "Charente-Maritime"
+                    },
+                    {
+                      "label": "Côtes-d'Armor",
+                      "value": "Côtes-d'Armor"
+                    },
+                    {
+                      "label": "Deux-Sèvres",
+                      "value": "Deux-Sèvres"
+                    },
+                    {
+                      "label": "Finistère",
+                      "value": "Finistère"
+                    },
+                    {
+                      "label": "Gironde",
+                      "value": "Gironde"
+                    },
+                    {
+                      "label": "Hérault",
+                      "value": "Hérault"
+                    },
+                    {
+                      "label": "Ille-et-Vilaine",
+                      "value": "Ille-et-Vilaine"
+                    },
+                    {
+                      "label": "Indre-et-Loire",
+                      "value": "Indre-et-Loire"
+                    },
+                    {
+                      "label": "Loire-Atlantique",
+                      "value": "Loire-Atlantique"
+                    },
+                    {
+                      "label": "Loiret",
+                      "value": "Loiret"
+                    },
+                    {
+                      "label": "Morbihan",
+                      "value": "Morbihan"
+                    },
+                    {
+                      "label": "Vendée",
+                      "value": "Vendée"
+                    }
+                  ]
+                }
+              },
+              "species": {
+                "name": "Héron cendré",
+                "latinName": "",
+                "protection": "protégée",
+                "note": "Données observées de 2016-01-15 à 2026-10-30. Départements : Gironde, Finistère, Hérault, Loire-Atlantique, Côtes-d'Armor, Bas-Rhin, Charente-Maritime, Indre-et-Loire, Morbihan, Vendée."
+              },
+              "footer": {
+                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table observations · calculé le 2026-11-12T09:58:00+00:00"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "question": "Quel temps fera-t-il demain ?",
+      "action": null,
+      "kind": "empty",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-6",
+      "text": "Cette question ne porte pas sur les observations naturalistes exposées par le serveur MCP. Je ne peux pas y répondre sans inventer de données. Essayez par exemple : « évolution des observations de Milan royal depuis 2016 », « top 10 des espèces en Gironde en 2025 » ou « carte du Busard cendré ce printemps ». Question reformulée : Quel temps fera-t-il demain ?",
+      "messages": [
+        {
+          "version": "1.0",
+          "deleteSurface": {
+            "surfaceId": "lpo-exemple-bout-en-bout-5"
+          }
+        },
+        {
+          "version": "1.0",
+          "createSurface": {
+            "surfaceId": "lpo-exemple-bout-en-bout-6",
+            "catalogId": "https://lpo-data-ai.example/a2ui/catalogs/lpo/v1/catalog.json",
+            "sendDataModel": true,
+            "components": [
+              {
+                "id": "root",
+                "component": "Column",
+                "children": [
+                  "header",
+                  "notice_list",
+                  "footer"
+                ]
+              },
+              {
+                "id": "header",
+                "component": "Card",
+                "child": "header_col"
+              },
+              {
+                "id": "header_col",
+                "component": "Column",
+                "children": [
+                  "header_title",
+                  "header_subtitle"
+                ]
+              },
+              {
+                "id": "header_title",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/title"
+                }
+              },
+              {
+                "id": "header_subtitle",
+                "component": "Text",
+                "text": {
+                  "@path": "/header/subtitle"
+                },
+                "variant": "caption"
+              },
+              {
+                "id": "notice_list",
+                "component": "List",
+                "children": {
+                  "path": "/notices",
+                  "componentId": "notice_tpl"
+                }
+              },
+              {
+                "id": "notice_tpl",
+                "component": "Notice",
+                "tone": {
+                  "@path": "tone"
+                },
+                "title": {
+                  "@path": "title"
+                },
+                "message": {
+                  "@path": "message"
+                }
+              },
+              {
+                "id": "footer",
+                "component": "Text",
+                "text": {
+                  "@path": "/footer/source"
+                },
+                "variant": "caption"
+              }
+            ],
+            "dataModel": {
+              "header": {
+                "title": "Question hors périmètre",
+                "subtitle": "toute la période disponible · France entière"
+              },
+              "kpis": [
+                {
+                  "label": "Observations",
+                  "value": "—",
+                  "hint": "Aucune donnée",
+                  "trend": "",
+                  "tone": "neutral"
+                }
+              ],
+              "chart": {
+                "title": "",
+                "series": [],
+                "items": [],
+                "points": [],
+                "legend": [],
+                "xLabel": "",
+                "yLabel": "",
+                "valueLabel": "",
+                "privacyMode": "exact",
+                "emptyMessage": ""
+              },
+              "table": {
+                "title": "",
+                "caption": "",
+                "rows": [],
+                "emptyMessage": "Aucune ligne à afficher."
+              },
+              "notices": [
+                {
+                  "tone": "info",
+                  "title": "Aucune donnée à afficher",
+                  "message": "Cette question ne porte pas sur les observations naturalistes exposées par le serveur MCP. Je ne peux pas y répondre sans inventer de données. Essayez par exemple : « évolution des observations de Milan royal depuis 2016 », « top 10 des espèces en Gironde en 2025 » ou « carte du Busard cendré ce printemps »."
+                }
+              ],
+              "filters": {
+                "species": {
+                  "value": "",
+                  "options": []
+                },
+                "period": {
+                  "value": "",
+                  "options": []
+                },
+                "area": {
+                  "value": "",
+                  "options": []
+                }
+              },
+              "species": {},
+              "footer": {
+                "source": "Source : serveur MCP lpo-data (lecture seule) · profil observations · table ? · calculé à la demande"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

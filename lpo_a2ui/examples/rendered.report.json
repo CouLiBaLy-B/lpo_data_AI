@@ -1,0 +1,109 @@
+{
+  "surfaces_rendered": 1,
+  "report": [
+    {
+      "tour": 1,
+      "kind": "trend",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-1",
+      "surfaces": [
+        "lpo-exemple-bout-en-bout-1"
+      ],
+      "composants": 21,
+      "noeuds": 167,
+      "noop": [],
+      "erreurs": []
+    },
+    {
+      "tour": 2,
+      "kind": "ranking",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-2",
+      "surfaces": [
+        "lpo-exemple-bout-en-bout-2"
+      ],
+      "composants": 21,
+      "noeuds": 202,
+      "noop": [],
+      "erreurs": []
+    },
+    {
+      "tour": 3,
+      "kind": "ranking",
+      "mode": "update",
+      "surfaceId": "lpo-exemple-bout-en-bout-2",
+      "surfaces": [
+        "lpo-exemple-bout-en-bout-2"
+      ],
+      "composants": 21,
+      "noeuds": 202,
+      "noop": [],
+      "erreurs": []
+    },
+    {
+      "tour": 4,
+      "kind": "ranking",
+      "mode": "update",
+      "surfaceId": "lpo-exemple-bout-en-bout-2",
+      "surfaces": [
+        "lpo-exemple-bout-en-bout-2"
+      ],
+      "composants": 21,
+      "noeuds": 202,
+      "noop": [],
+      "erreurs": []
+    },
+    {
+      "tour": 5,
+      "kind": "map",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-3",
+      "surfaces": [
+        "lpo-exemple-bout-en-bout-3"
+      ],
+      "composants": 21,
+      "noeuds": 369,
+      "noop": [],
+      "erreurs": []
+    },
+    {
+      "tour": 6,
+      "kind": "trend",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-4",
+      "surfaces": [
+        "lpo-exemple-bout-en-bout-4"
+      ],
+      "composants": 21,
+      "noeuds": 626,
+      "noop": [],
+      "erreurs": []
+    },
+    {
+      "tour": 7,
+      "kind": "species",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-5",
+      "surfaces": [
+        "lpo-exemple-bout-en-bout-5"
+      ],
+      "composants": 18,
+      "noeuds": 89,
+      "noop": [],
+      "erreurs": []
+    },
+    {
+      "tour": 8,
+      "kind": "empty",
+      "mode": "create",
+      "surfaceId": "lpo-exemple-bout-en-bout-6",
+      "surfaces": [
+        "lpo-exemple-bout-en-bout-6"
+      ],
+      "composants": 8,
+      "noeuds": 11,
+      "noop": [],
+      "erreurs": []
+    }
+  ]
+}

@@ -87,3 +87,149 @@ uv run streamlit run main.py
 | `data_retrieve/` | ETL biodiv-sports → SQLite (**dev uniquement**) |
 
 Voir [architecture.md](architecture.md) pour le détail.
+
+---
+
+# Chaîne conversationnelle MCP + A2UI (nouvelle interface)
+
+En plus de l'application Streamlit ci-dessus, le dépôt expose une chaîne
+complète **question en langage naturel → outils MCP → interface graphique
+A2UI** :
+
+```
+[Utilisateur] → [Client avec renderer A2UI] ⇄ [Agent orchestrateur] ⇄ [Serveur MCP lpo-data]
+```
+
+- L'agent ne fabrique **aucun chiffre** : toutes les valeurs viennent du serveur
+  MCP, mis en forme (jamais recalculées).
+- L'interface est décrite en **messages A2UI v1.0** validés contre le catalogue
+  avant envoi. Le client n'exécute **ni HTML, ni CSS, ni JS** fourni par le
+  serveur.
+- Les filtres (espèce, période, zone) remontent à l'agent, qui rappelle le
+  serveur MCP puis ne renvoie qu'un **`updateDataModel`** : la surface n'est pas
+  recréée.
+- Chaque réponse comporte un **résumé texte de repli** (clients sans renderer).
+
+## 1. Installation
+
+```bash
+uv sync                      # ou : python -m venv .venv && .venv/bin/pip install -e .
+```
+
+Dépendances ajoutées : `mcp`, `a2ui-core`, `a2ui-agent-sdk`, `fastapi`,
+`uvicorn`, `httpx` (déclarées dans `pyproject.toml`).
+
+## 2. Base de démonstration
+
+Le dépôt ne contient pas de table d'observations (voir
+[docs/00-analyse-depot.md](docs/00-analyse-depot.md)) : une base de
+démonstration **explicitement étiquetée** est générée localement.
+
+```bash
+python scripts/seed_demo_db.py --rows 12000
+# → data/lpo_demo.db (12 000 observations, 2016-01-01 → 2026-10-31)
+```
+
+La base réelle du dépôt (`data/sensitive_areas.db`, 169 lignes, sans
+coordonnées ni effectifs) reste utilisable via un autre **profil** ; l'interface
+dégrade alors explicitement au lieu d'inventer.
+
+## 3. Lancer le serveur MCP seul
+
+```bash
+# stdio (défaut, utilisé par l'agent local)
+LPO_PROFILE=observations DATABASE_URL=sqlite:///$(pwd)/data/lpo_demo.db \
+  python -m lpo_data_mcp
+
+# streamable-http (service réseau)
+LPO_PROFILE=observations DATABASE_URL=sqlite:///$(pwd)/data/lpo_demo.db \
+  python -m lpo_data_mcp --transport streamable-http --port 8765
+```
+
+Outils exposés (lecture seule, sorties structurées + résumé texte) :
+`get_dataset_overview`, `list_species`, `get_observations`,
+`aggregate_observations`, `get_species_info`.
+
+Inspection rapide avec l'inspecteur MCP officiel :
+
+```bash
+npx @modelcontextprotocol/inspector python -m lpo_data_mcp
+```
+
+## 4. Lancer l'agent en ligne de commande
+
+```bash
+LPO_PROFILE=observations DATABASE_URL=sqlite:///$(pwd)/data/lpo_demo.db \
+  python -m orchestrator
+```
+
+L'agent démarre lui-même le serveur MCP en `stdio` (`LPO_MCP_COMMAND`) ou se
+connecte à un serveur HTTP existant (`LPO_MCP_URL`).
+
+## 5. Lancer l'interface web (client A2UI)
+
+```bash
+LPO_PROFILE=observations DATABASE_URL=sqlite:///$(pwd)/data/lpo_demo.db \
+  LPO_LLM_INTENT=off \
+  .venv/bin/python -m uvicorn web.app:app --host 0.0.0.0 --port 8080
+```
+
+Puis ouvrir <http://localhost:8080>. C'est un **renderer A2UI** : il reçoit des
+messages JSON validés (`/api/ask`, `/api/action`) et construit le DOM avec des
+API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
+
+| Variable | Effet |
+| --- | --- |
+| `LPO_PROFILE` | `observations` (défaut) ou `sensitive_areas` (base du dépôt) |
+| `DATABASE_URL` | base interrogée (lecture seule) |
+| `LPO_LLM_INTENT` | `auto` (défaut) / `off` — extraction d'intention par LLM ou heuristique |
+| `LPO_MCP_URL` | URL d'un serveur MCP `streamable-http` existant |
+| `LPO_MCP_COMMAND` | commande du serveur MCP `stdio` (défaut : `python -m lpo_data_mcp`) |
+| `LPO_PRIVACY_MODE` | `auto` (défaut) / `exact` / `blurred` / `department` |
+| `LPO_ALLOW_EXACT_COORDINATES` | `1` pour autoriser les coordonnées exactes d'espèces sensibles |
+
+## 6. Tests
+
+```bash
+.venv/bin/python -m pytest            # 138 tests
+```
+
+Couverture : garde-fous SQL, confidentialité (floutage), contrat des outils MCP,
+serveur MCP réel en `stdio`, catalogue et gabarits A2UI, compréhension de
+l'intention, orchestrateur (create/update, dégradation, états vides), API web.
+
+## 7. Exemple bout en bout
+
+```bash
+python -m lpo_a2ui.examples.build_transcript   # → lpo_a2ui/examples/transcript.md
+```
+
+La trace contient, pour chaque question : les **appels MCP** (outil, arguments,
+durée, résumé), les **messages A2UI** réellement validés, le **résumé texte** et
+l'effet côté client. Le rendu DOM correspondant est dans
+`lpo_a2ui/examples/rendered.html` (voir le README du dossier pour le
+régénérer).
+
+## 8. Structure ajoutée
+
+| Élément | Rôle |
+| --- | --- |
+| `lpo_data_mcp/` | Serveur MCP : outils typés, SQL paramétré, profils, confidentialité |
+| `lpo_a2ui/catalog/` | Catalogue A2UI v1 (14 composants) + schémas vendorisés |
+| `lpo_a2ui/validation.py` | Validation schéma + catalogue + séquences avant envoi |
+| `lpo_a2ui/templates.py` | Gabarits des surfaces (trend, ranking, map, species, empty) |
+| `orchestrator/intent.py` | Compréhension de l'intention (LLM ou heuristique) |
+| `orchestrator/mcp_client.py` | Client MCP (stdio / streamable-http) |
+| `orchestrator/views.py` | Données MCP → modèle de vue (aucun calcul métier) |
+| `orchestrator/agent.py` | Boucle question → outils → surface, actions, trace |
+| `web/` | API FastAPI + client A2UI (`renderer.js`, `app.js`, `styles.css`) |
+| `lpo_a2ui/examples/` | Trace bout en bout + rendu DOM |
+| `docs/00-analyse-depot.md` | Rapport d'analyse (Étape 0) et questions ouvertes |
+| `docs/01-architecture.md` | Architecture, choix techniques, conformité A2UI v1.0 |
+
+## 9. Compatibilité
+
+L'application Streamlit d'origine (`uv run streamlit run main.py`) continue de
+fonctionner : la seule modification apportée au code existant est l'ajout de
+`run_select_params()` dans `src/database/engine.py` (mêmes garde-fous, requêtes
+paramétrées).

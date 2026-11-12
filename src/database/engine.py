@@ -212,6 +212,40 @@ def run_select(sql: str, max_rows: int | None = None) -> pd.DataFrame:
     return df
 
 
+def run_select_params(
+    sql: str,
+    params: dict[str, Any] | None = None,
+    max_rows: int | None = None,
+) -> pd.DataFrame:
+    """
+    Variante **paramétrée** de `run_select` (bind parameters SQLAlchemy).
+
+    Utilisée par le serveur MCP : les valeurs venant de l'utilisateur/LLM
+    passent exclusivement par `params`, jamais par concaténation de chaînes.
+    La garde lecture seule et le plafond de lignes restent identiques.
+    """
+    assert_read_only(sql)
+    cap = max_rows or settings.database.max_rows
+    engine = get_engine()
+
+    try:
+        with engine.connect() as conn:
+            if engine.dialect.name == "postgresql":
+                conn.execute(
+                    text(f"SET statement_timeout = {int(settings.database.statement_timeout_ms)}")
+                )
+            df = pd.read_sql_query(text(sql), conn, params=dict(params or {}))
+    except DatabaseException:
+        raise
+    except Exception as e:  # noqa: BLE001
+        raise DatabaseException(f"Erreur SQL: {e}")
+
+    if len(df) > cap:
+        logger.info("Résultat tronqué à %d lignes (sur %d).", cap, len(df))
+        df = df.head(cap)
+    return df
+
+
 def explain_valid(sql: str) -> tuple[bool, str]:
     """Vérifie la validité d'une requête SANS l'exécuter (LIMIT 0 enveloppant)."""
     try:
