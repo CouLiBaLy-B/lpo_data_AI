@@ -202,7 +202,7 @@ API sûres (`textContent`, SVG). Le catalogue est servi par `/api/catalog`.
 ## 6. Tests
 
 ```bash
-.venv/bin/python -m pytest            # 314 tests (1 ignoré : intégration PostgreSQL)
+.venv/bin/python -m pytest            # 315 tests (1 ignoré : intégration PostgreSQL)
 ```
 
 Afficher le prompt système et les exemples few-shot utilisés par l'agent :
