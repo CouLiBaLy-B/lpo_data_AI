@@ -485,6 +485,7 @@ a {
 
 .composer button {
   height: 36px;
+  min-width: 96px;
   padding: 0 var(--space-4);
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
@@ -982,14 +983,16 @@ a {
   background: var(--surface-2);
 }
 
+/* La mer et la terre ne partagent pas la même teinte : sans cet écart, la
+ * France se devine au trait des départements et la carte devient une texture. */
 .map-bg {
-  fill: #f1eee6;
+  fill: #f7f5ef;
 }
 
 .map-dept {
-  fill: #e6e2d8;
-  stroke: #ffffff;
-  stroke-width: 0.7;
+  fill: #e6e1d4;
+  stroke: #fcfbf7;
+  stroke-width: 0.8;
 }
 
 .map-point {
